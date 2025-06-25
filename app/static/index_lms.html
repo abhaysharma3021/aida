@@ -475,7 +475,7 @@
         }
       }
 
-      // Hook into course.js's loadAllModules
+      // Hook into course.js's loadAllModules 
       const originalLoadAllModules = loadAllModules;
       loadAllModules = async function () {
         await originalLoadAllModules();
