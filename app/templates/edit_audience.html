@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ASID - Edit Audience Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div class="container">
+		<div class="row">
+			<button onclick="window.location.href='/auth/logout'" class="btn btn-primary" style="margin-left: 100%">Logout</button>
+		</div>
+        <header>
+            <h1>Edit Analysis for "{{ course_topic }}"</h1>
+            <p class="edit-note">Make changes to the generated audience analysis below. These will be used in the course design phase.</p>
+        </header>
+        
+        <main>
+            <form method="POST">
+                <div class="edit-section">
+                    <h2>Audience Analysis</h2>
+                    <div class="edit-hint">Use Markdown formatting for headings (#), bold (**text**), lists (- item), etc.</div>
+                    <textarea name="audience_analysis" id="audience_analysis" class="edit-textarea" rows="20">{{ audience_analysis }}</textarea>
+                </div>
+                
+                <div class="edit-actions">
+                    <a href="{{ url_for('main.audience_analysis', analysis_id=analysis_id) }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </main>
+        
+        <footer>
+            <p>ASID Project - Milestone 1: Input Collection & Analysis</p>
+        </footer>
+    </div>
+</body>
+</html>

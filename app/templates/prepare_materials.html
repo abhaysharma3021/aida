@@ -1,0 +1,577 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Course Materials - {{ course_topic }}{% endblock %}
+
+{% block header_subtitle %}Comprehensive Course Materials Generation{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Progress indicator -->
+    <div class="progress mb-4">
+        <div class="progress-bar bg-warning" role="progressbar" style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">Phase 3: Comprehensive Course Materials</div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h3 class="mb-2">Generate Comprehensive Course Materials</h3>
+            <h4 class="text-primary">{{ course_topic }}</h4>
+            <p class="text-muted">Audience Level: {{ audience_type | capitalize }} | Course Design Date: {{ design_date }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="alert alert-info p-3">
+                <h6 class="mb-2"><i class="fas fa-book"></i> Textbook-Style Materials</h6>
+                <small>Comprehensive content similar to professional textbooks with extensive explanations, examples, and activities.</small>
+            </div>
+        </div>
+    </div>
+    
+    <form method="POST" action="{{ url_for('main.generate_materials', analysis_id=analysis_id) }}" id="materialsForm">
+        <div class="row">
+            <!-- Main Content Column -->
+            <div class="col-lg-8">
+                <!-- Module Selection Card -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0"><i class="fas fa-layer-group"></i> Select Modules to Generate</h4>
+                            <span class="badge bg-light text-dark">{{ modules|length }} Total Modules</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-3">Choose which modules to generate comprehensive materials for. Each module will include extensive content, detailed examples, and complete learning resources.</p>
+                        
+                        <div class="mb-3">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="selectAll" checked>
+                                <label class="form-check-label fw-bold" for="selectAll">
+                                    <i class="fas fa-check-double"></i> Select All Modules
+                                </label>
+                            </div>
+                            <hr>
+                        </div>
+                        
+                        <div class="row">
+                            {% for module in modules %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card module-selection-card h-100">
+                                    <div class="card-body">
+                                        <div class="form-check">
+                                            <input class="form-check-input module-checkbox" type="checkbox" 
+                                                   name="selected_modules" value="{{ module.number }}" 
+                                                   id="module{{ module.number }}" checked>
+                                            <label class="form-check-label w-100" for="module{{ module.number }}">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div>
+                                                        <h6 class="mb-1">Module {{ module.number }}: {{ module.title }}</h6>
+                                                        {% if module.topics %}
+                                                        <small class="text-muted">{{ module.topics|length }} topics covered</small>
+                                                        {% endif %}
+                                                    </div>
+                                                    <span class="badge bg-success ms-2">
+                                                        <i class="fas fa-book-open"></i>
+                                                    </span>
+                                                </div>
+                                                {% if module.topics %}
+                                                <div class="mt-2">
+                                                    <small class="text-muted">Key topics: {{ module.topics|join(', ')|truncate(80) }}</small>
+                                                </div>
+                                                {% endif %}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- What Will Be Generated Card -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0"><i class="fas fa-magic"></i> Comprehensive Materials Included</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-3">Each selected module will automatically include all comprehensive components:</p>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="feature-item mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="feature-icon bg-primary text-white rounded-circle me-3">
+                                            <i class="fas fa-book"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">Comprehensive Content</h6>
+                                            <small class="text-muted">8,000-12,000 words of detailed explanations, examples, and applications</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="feature-item mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="feature-icon bg-info text-white rounded-circle me-3">
+                                            <i class="fas fa-clipboard-list"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">Detailed Lesson Plans</h6>
+                                            <small class="text-muted">Complete 3-4 hour lesson plans with timing and engagement strategies</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="feature-item mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="feature-icon bg-warning text-white rounded-circle me-3">
+                                            <i class="fas fa-users"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">Extensive Activities</h6>
+                                            <small class="text-muted">8-12 diverse learning activities including case studies and projects</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="feature-item mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="feature-icon bg-danger text-white rounded-circle me-3">
+                                            <i class="fas fa-tasks"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">Comprehensive Assessments</h6>
+                                            <small class="text-muted">Multiple assessment types from quick checks to major projects</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="feature-item mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="feature-icon bg-secondary text-white rounded-circle me-3">
+                                            <i class="fas fa-chalkboard-teacher"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">Instructor Guides</h6>
+                                            <small class="text-muted">Complete facilitation guides with tips and troubleshooting</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="feature-item mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="feature-icon bg-success text-white rounded-circle me-3">
+                                            <i class="fas fa-graduation-cap"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">Professional Quality</h6>
+                                            <small class="text-muted">Textbook-level content ready for immediate use</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Additional Instructions Card (Optional) -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-comment-dots"></i> Additional Instructions (Optional)</h5>
+                    </div>
+                    <div class="card-body">
+                        <textarea class="form-control" name="additional_notes" rows="4" 
+                                  placeholder="Any specific requirements, industry focus, or customizations for the generated materials...
+
+Examples:
+• Focus on healthcare applications
+• Include more international examples  
+• Emphasize compliance and regulations
+• Add specific tools or technologies
+• Target specific certification requirements"></textarea>
+                        <small class="form-text text-muted mt-2">
+                            <i class="fas fa-info-circle"></i> These instructions will be incorporated into all generated materials for the selected modules.
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- Generate Button -->
+                <div class="card">
+                    <div class="card-body text-center">
+                        <button type="submit" class="btn btn-primary btn-lg px-5 py-3" id="generateBtn">
+                            <i class="fas fa-rocket"></i> Generate Comprehensive Course Materials
+                        </button>
+                        <div class="mt-3">
+                            <small class="text-muted" id="estimatedTime">
+                                <i class="fas fa-clock"></i> Estimated generation time: <span id="timeEstimate">5-8 minutes</span>
+                            </small>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-success">
+                                <i class="fas fa-shield-alt"></i> All materials can be edited and customized after generation
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Hidden inputs for comprehensive generation -->
+                <input type="hidden" name="components" value="lesson_plans">
+                <input type="hidden" name="components" value="content">
+                <input type="hidden" name="components" value="activities">
+                <input type="hidden" name="components" value="assessments">
+                <input type="hidden" name="components" value="instructor_guides">
+                <input type="hidden" name="detail_level" value="comprehensive">
+                <input type="hidden" name="format_preference" value="textbook_style">
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Generation Summary Card -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Generation Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-item d-flex justify-content-between mb-3">
+                            <span><strong>Selected Modules:</strong></span>
+                            <span id="selectedModuleCount" class="badge bg-primary">{{ modules|length }}</span>
+                        </div>
+                        <div class="stat-item d-flex justify-content-between mb-3">
+                            <span><strong>Components per Module:</strong></span>
+                            <span class="badge bg-success">5 (All Included)</span>
+                        </div>
+                        <div class="stat-item d-flex justify-content-between mb-3">
+                            <span><strong>Total Materials:</strong></span>
+                            <span id="totalItems" class="badge bg-warning">{{ modules|length * 5 }}</span>
+                        </div>
+                        <hr>
+                        <div class="text-center">
+                            <h6 class="text-primary mb-2">Content Volume per Module</h6>
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="stat-box">
+                                        <div class="stat-number">8-12k</div>
+                                        <div class="stat-label">Words</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-box">
+                                        <div class="stat-number">45-60</div>
+                                        <div class="stat-label">Minutes Reading</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quality Guarantee Card -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-medal"></i> Quality Features</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <strong>Textbook Quality:</strong> Professional-level content depth
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <strong>Real Examples:</strong> Industry cases and practical applications
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <strong>Interactive Elements:</strong> Engaging activities and assessments
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <strong>Complete Package:</strong> Everything needed to teach
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <strong>Fully Editable:</strong> Customize after generation
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Tips Card -->
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="fas fa-lightbulb"></i> Pro Tips</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="tip-item mb-3">
+                            <h6 class="text-primary mb-1">Start Small</h6>
+                            <small>Generate 1-2 modules first to review quality and style</small>
+                        </div>
+                        <div class="tip-item mb-3">
+                            <h6 class="text-primary mb-1">Be Patient</h6>
+                            <small>High-quality generation takes time - each module is extensively detailed</small>
+                        </div>
+                        <div class="tip-item mb-3">
+                            <h6 class="text-primary mb-1">Customize Later</h6>
+                            <small>All materials can be edited to match your specific needs</small>
+                        </div>
+                        <div class="tip-item">
+                            <h6 class="text-primary mb-1">Use Instructions</h6>
+                            <small>Add specific requirements to get exactly what you need</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Navigation Card -->
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="fas fa-compass"></i> Navigation</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('main.view_course_design', analysis_id=analysis_id) }}" class="btn btn-outline-primary">
+                                <i class="fas fa-sitemap"></i> View Course Design
+                            </a>
+                            <a href="{{ url_for('main.results', analysis_id=analysis_id) }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-list"></i> View All Components
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary mb-4" role="status" style="width: 4rem; height: 4rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h4 class="mb-3">Generating Comprehensive Course Materials...</h4>
+                <p class="mb-3" id="generationStatus">Initializing textbook-style content generation...</p>
+                
+                <div class="progress mb-3" style="height: 10px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                         role="progressbar" style="width: 0%" id="progressBar"></div>
+                </div>
+                
+                <div class="row text-center mt-4">
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="h5 text-primary mb-1" id="modulesProcessed">0</div>
+                            <small class="text-muted">Modules Complete</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="h5 text-success mb-1" id="componentsGenerated">0</div>
+                            <small class="text-muted">Components Generated</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="h5 text-warning mb-1" id="timeElapsed">0:00</div>
+                            <small class="text-muted">Time Elapsed</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-4 mb-0">
+                    <small><i class="fas fa-info-circle"></i> Creating comprehensive, textbook-quality materials takes time. Please don't close this window.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.module-selection-card {
+    transition: all 0.3s ease;
+    border: 2px solid #e9ecef;
+}
+
+.module-selection-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 4px 8px rgba(0,123,255,0.1);
+}
+
+.feature-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-box {
+    text-align: center;
+    padding: 10px;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.tip-item:not(:last-child) {
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 0.75rem;
+}
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Module selection handling
+    document.getElementById('selectAll').addEventListener('change', function() {
+        const moduleCheckboxes = document.querySelectorAll('.module-checkbox');
+        moduleCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateSummary();
+    });
+    
+    // Individual module checkbox handling
+    document.querySelectorAll('.module-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectAll();
+            updateSummary();
+        });
+    });
+    
+    // Update select all checkbox state
+    function updateSelectAll() {
+        const moduleCheckboxes = document.querySelectorAll('.module-checkbox');
+        const allChecked = Array.from(moduleCheckboxes).every(cb => cb.checked);
+        const someChecked = Array.from(moduleCheckboxes).some(cb => cb.checked);
+        
+        const selectAll = document.getElementById('selectAll');
+        selectAll.checked = allChecked;
+        selectAll.indeterminate = someChecked && !allChecked;
+    }
+    
+    // Update summary counts
+    function updateSummary() {
+        const selectedModules = document.querySelectorAll('.module-checkbox:checked').length;
+        const totalComponents = selectedModules * 5; // Always 5 components per module
+        
+        document.getElementById('selectedModuleCount').textContent = selectedModules;
+        document.getElementById('totalItems').textContent = totalComponents;
+        
+        // Update estimated time (more realistic for comprehensive generation)
+        const minutes = Math.ceil(selectedModules * 2.5); // 2.5 minutes per module for comprehensive
+        const timeText = minutes > 60 
+            ? `${Math.floor(minutes/60)}h ${minutes%60}m`
+            : `${minutes} minutes`;
+        document.getElementById('timeEstimate').textContent = timeText;
+        
+        // Disable generate button if nothing selected
+        const generateBtn = document.getElementById('generateBtn');
+        generateBtn.disabled = selectedModules === 0;
+        
+        if (generateBtn.disabled) {
+            generateBtn.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please Select At Least One Module';
+            generateBtn.classList.remove('btn-primary');
+            generateBtn.classList.add('btn-secondary');
+        } else {
+            generateBtn.innerHTML = '<i class="fas fa-rocket"></i> Generate Comprehensive Course Materials';
+            generateBtn.classList.remove('btn-secondary');
+            generateBtn.classList.add('btn-primary');
+        }
+    }
+    
+    // Form submission handling with enhanced progress
+    document.getElementById('materialsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const selectedModules = document.querySelectorAll('.module-checkbox:checked').length;
+        if (selectedModules === 0) {
+            alert('Please select at least one module to generate materials for.');
+            return;
+        }
+        
+        // Show loading modal
+        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+        loadingModal.show();
+        
+        // Enhanced progress simulation
+        const progressBar = document.getElementById('progressBar');
+        const statusText = document.getElementById('generationStatus');
+        const modulesProcessed = document.getElementById('modulesProcessed');
+        const componentsGenerated = document.getElementById('componentsGenerated');
+        const timeElapsed = document.getElementById('timeElapsed');
+        
+        let progress = 0;
+        let modulesCount = 0;
+        let componentsCount = 0;
+        let startTime = new Date();
+        
+        const statuses = [
+            'Initializing comprehensive content generation...',
+            'Analyzing course structure and requirements...',
+            'Generating detailed textbook-style content...',
+            'Creating extensive learning activities...',
+            'Developing comprehensive assessments...',
+            'Building detailed lesson plans...',
+            'Preparing instructor guides...',
+            'Finalizing comprehensive materials...',
+            'Quality checking generated content...',
+            'Preparing materials for review...'
+        ];
+        
+        let statusIndex = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 8 + 2; // Slower progress for comprehensive generation
+            if (progress > 95) progress = 95;
+            
+            progressBar.style.width = progress + '%';
+            
+            // Update status
+            if (statusIndex < statuses.length && progress > (statusIndex * 100 / statuses.length)) {
+                statusText.textContent = statuses[statusIndex];
+                statusIndex++;
+            }
+            
+            // Update stats
+            const expectedModules = Math.floor((progress / 100) * selectedModules);
+            const expectedComponents = expectedModules * 5;
+            
+            if (expectedModules > modulesCount) {
+                modulesCount = expectedModules;
+                modulesProcessed.textContent = modulesCount;
+            }
+            
+            if (expectedComponents > componentsCount) {
+                componentsCount = expectedComponents;
+                componentsGenerated.textContent = componentsCount;
+            }
+            
+            // Update time
+            const elapsed = Math.floor((new Date() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            timeElapsed.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+        }, 1500); // Slower updates for comprehensive generation
+        
+        // Submit the form after a brief delay
+        setTimeout(() => {
+            clearInterval(interval);
+            this.submit();
+        }, 1000);
+    });
+    
+    // Initialize summary
+    updateSummary();
+</script>
+{% endblock %}

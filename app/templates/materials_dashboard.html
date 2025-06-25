@@ -1,0 +1,500 @@
+{% extends "base.html" %}
+
+{% block title %}Course Materials Dashboard - {{ course_topic }}{% endblock %}
+
+{% block header_subtitle %}Course Materials Dashboard{% endblock %}
+
+{% block content %}
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+
+<div class="container-fluid mt-4">
+    <!-- Progress indicator -->
+    <div class="progress mb-4">
+        <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">Phase 3: Course Materials Complete</div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h3 class="mb-2">Course Materials: {{ course_topic }}</h3>
+            <p class="text-muted mb-3">Generated comprehensive instructional materials for all modules</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="btn-group">
+                <a href="{{ url_for('main.view_course_design', analysis_id=analysis_id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Course Design
+                </a>
+                <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-download"></i> Export All
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ url_for('main.download_all_materials', analysis_id=analysis_id) }}">
+                        <i class="fas fa-file-archive"></i> Download All Materials
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="alert('PDF export coming soon! For now, use individual material export options.')">
+                        <i class="fas fa-file-pdf"></i> Export as PDF
+                    </a></li>
+                    <li>
+                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#scormModal">
+                        <i class="fas fa-file-archive"></i> Export to SCORM
+                    </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <!-- Modal for SCORM version selection -->
+        <div class="modal fade" id="scormModal" tabindex="-1" role="dialog" aria-labelledby="scormModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content" id="versionspopup">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Download SCORM Package</h5>
+        <button type="button" class="close fw-bold fs-5 border-0 bg-transparent" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body text-center">
+        <div id="errorMessage" class="text-start  text-danger mt-2 mb-2" style="display: none;">
+            Please select Template and SCORM Version.
+        </div>
+        <!-- Template Select -->
+        <div class="text-start mb-3">
+          <label for="templateSelect" class="form-label fw-bold">Select Template</label>
+          <select id="templateSelect" class="form-select">
+            <option value="" disabled selected>Select a template</option>
+            <option value="templateA">Template 1</option>
+          </select>
+        </div>
+
+        <!-- Version Select -->
+        <div class="text-start mb-3">
+          <label for="versionSelect" class="form-label fw-bold">Select SCORM Version</label>
+          <select id="versionSelect" class="form-select">
+            <option value="" disabled selected>Select version</option>
+            <option value="1.2">SCORM 1.2</option>
+            <option value="2004">SCORM 2004</option>
+          </select>
+        </div>
+
+        <!-- Folder Selection -->
+        <!-- <div class="text-start mb-3">
+          <label class="form-label fw-bold">Select Folder Path</label><br>
+          <input type="file" id="folderInput" webkitdirectory directory multiple class="form-control" />
+        </div> -->
+
+        <!-- Download Button -->
+        <!-- <button id="downloadBtn" class="btn btn-success" onclick="downloadSCORM()" disabled>Download</button> -->
+        <span id="downloadWrapper" title="Please select both Template and SCORM Version to enable download.">
+        <button id="downloadBtn" class="btn btn-success" onclick="downloadSCORM()" disabled title="Please select both Template and SCORM Version to enable download.">
+            Download
+        </button>
+       
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+    </div>
+
+    <!-- Materials Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card stats-card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <div class="ms-3">
+                            <div class="stats-number">{{ materials.modules|length }}</div>
+                            <div class="stats-label">Modules</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card stats-card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                        <div class="ms-3">
+                            <div class="stats-number">{{ total_lesson_plans }}</div>
+                            <div class="stats-label">Lesson Plans</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card stats-card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="ms-3">
+                            <div class="stats-number">{{ total_activities }}</div>
+                            <div class="stats-label">Activities</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card stats-card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div class="ms-3">
+                            <div class="stats-number">{{ total_assessments }}</div>
+                            <div class="stats-label">Assessments</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Materials by Module -->
+    <div class="row">
+        {% for module in materials.modules %}
+        <div class="col-12 mb-4">
+            <div class="card module-card">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-folder text-primary"></i>
+                            Module {{ module.number }}: {{ module.title }}
+                        </h5>
+                        <div class="module-actions">
+                            <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#module-{{ module.number }}" aria-expanded="false">
+                                <i class="fas fa-chevron-down"></i> Toggle Materials
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="collapse show" id="module-{{ module.number }}">
+                    <div class="card-body">
+                        <div class="row">
+                            {% if module.components.lesson_plan %}
+                            <div class="col-md-6 col-lg-3 mb-3">
+                                <div class="material-card lesson-plan-card">
+                                    <div class="material-header">
+                                        <div class="material-icon bg-primary">
+                                            <i class="fas fa-clipboard-list"></i>
+                                        </div>
+                                        <div class="material-info">
+                                            <h6 class="material-title">Lesson Plan</h6>
+                                            <small class="text-muted">Detailed lesson structure</small>
+                                        </div>
+                                    </div>
+                                    <div class="material-actions">
+                                        <a href="{{ url_for('main.view_material', analysis_id=analysis_id, module_id=module.number, material_type='lesson_plan') }}" 
+                                           class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        <a href="{{ url_for('main.edit_material', analysis_id=analysis_id, module_id=module.number, material_type='lesson_plan') }}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if module.components.content %}
+                            <div class="col-md-6 col-lg-3 mb-3">
+                                <div class="material-card content-card">
+                                    <div class="material-header">
+                                        <div class="material-icon bg-success">
+                                            <i class="fas fa-book"></i>
+                                        </div>
+                                        <div class="material-info">
+                                            <h6 class="material-title">Content</h6>
+                                            <small class="text-muted">Learning materials</small>
+                                        </div>
+                                    </div>
+                                    <div class="material-actions">
+                                        <a href="{{ url_for('main.view_material', analysis_id=analysis_id, module_id=module.number, material_type='content') }}" 
+                                           class="btn btn-sm btn-success">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        <a href="{{ url_for('main.edit_material', analysis_id=analysis_id, module_id=module.number, material_type='content') }}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if module.components.activities %}
+                            <div class="col-md-6 col-lg-3 mb-3">
+                                <div class="material-card activities-card">
+                                    <div class="material-header">
+                                        <div class="material-icon bg-info">
+                                            <i class="fas fa-users"></i>
+                                        </div>
+                                        <div class="material-info">
+                                            <h6 class="material-title">Activities</h6>
+                                            <small class="text-muted">Interactive exercises</small>
+                                        </div>
+                                    </div>
+                                    <div class="material-actions">
+                                        <a href="{{ url_for('main.view_material', analysis_id=analysis_id, module_id=module.number, material_type='activities') }}" 
+                                           class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        <a href="{{ url_for('main.edit_material', analysis_id=analysis_id, module_id=module.number, material_type='activities') }}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if module.components.assessments %}
+                            <div class="col-md-6 col-lg-3 mb-3">
+                                <div class="material-card assessments-card">
+                                    <div class="material-header">
+                                        <div class="material-icon bg-warning">
+                                            <i class="fas fa-tasks"></i>
+                                        </div>
+                                        <div class="material-info">
+                                            <h6 class="material-title">Assessments</h6>
+                                            <small class="text-muted">Evaluation tools</small>
+                                        </div>
+                                    </div>
+                                    <div class="material-actions">
+                                        <a href="{{ url_for('main.view_material', analysis_id=analysis_id, module_id=module.number, material_type='assessments') }}" 
+                                           class="btn btn-sm btn-warning">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        <a href="{{ url_for('main.edit_material', analysis_id=analysis_id, module_id=module.number, material_type='assessments') }}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if module.components.instructor_guide %}
+                            <div class="col-md-6 col-lg-3 mb-3">
+                                <div class="material-card instructor-guide-card">
+                                    <div class="material-header">
+                                        <div class="material-icon bg-danger">
+                                            <i class="fas fa-chalkboard-teacher"></i>
+                                        </div>
+                                        <div class="material-info">
+                                            <h6 class="material-title">Instructor Guide</h6>
+                                            <small class="text-muted">Teaching guidance</small>
+                                        </div>
+                                    </div>
+                                    <div class="material-actions">
+                                        <a href="{{ url_for('main.view_material', analysis_id=analysis_id, module_id=module.number, material_type='instructor_guide') }}" 
+                                           class="btn btn-sm btn-danger">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        <a href="{{ url_for('main.edit_material', analysis_id=analysis_id, module_id=module.number, material_type='instructor_guide') }}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.stats-card {
+    border: none;
+    border-radius: 12px;
+    transition: transform 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+
+.stats-icon {
+    font-size: 2rem;
+    opacity: 0.8;
+}
+
+.stats-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.stats-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.module-card {
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-radius: 12px;
+}
+
+.material-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    height: 100%;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.material-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.material-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.material-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin-right: 0.75rem;
+}
+
+.material-info {
+    flex: 1;
+}
+
+.material-title {
+    margin: 0;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.material-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.module-actions .btn {
+    transition: all 0.3s ease;
+}
+
+.module-actions .btn:hover {
+    transform: scale(1.05);
+}
+</style>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth collapse animations
+    const collapseElements = document.querySelectorAll('.collapse');
+    collapseElements.forEach(element => {
+        element.addEventListener('show.bs.collapse', function() {
+            this.style.transition = 'height 0.35s ease';
+        });
+        element.addEventListener('hide.bs.collapse', function() {
+            this.style.transition = 'height 0.35s ease';
+        });
+    });
+    
+    // Add loading states to buttons
+    const viewButtons = document.querySelectorAll('a[href*="view_material"]');
+    viewButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            const originalClass = icon.className;
+            icon.className = 'fas fa-spinner fa-spin';
+            
+            setTimeout(() => {
+                icon.className = originalClass;
+            }, 2000);
+        });
+    });
+});
+</script>
+<script>
+  var templateSelect = document.getElementById("templateSelect");
+  var versionSelect = document.getElementById("versionSelect");
+  var downloadBtn = document.getElementById("downloadBtn");
+  var downloadWrapper = document.getElementById("downloadWrapper");
+  var errorMessage = document.getElementById("errorMessage");
+  var scormModal = document.getElementById("scormModal");
+
+  function validateInputs() {
+    var templateSelected = templateSelect.value !== "";
+    var versionSelected = versionSelect.value !== "";
+    var allSelected = templateSelected && versionSelected;
+
+    downloadBtn.disabled = !allSelected;
+
+    if (allSelected) {
+      errorMessage.style.display = "none";
+    }
+  }
+
+  templateSelect.addEventListener("change", validateInputs);
+  versionSelect.addEventListener("change", validateInputs);
+
+  downloadWrapper.addEventListener("click", function () {
+    if (downloadBtn.disabled) {
+      errorMessage.style.display = "block";
+    }
+  });
+
+  function downloadSCORM() {
+    alert("SCORM package download started!");
+    window.location.href = '/download_all_materials/analysis_20250625115337?scorm=2004'; 
+  }
+
+  // ✅ Detect any click, and reset if modal is hidden
+  document.addEventListener("click", function () {
+    var modalStyle = window.getComputedStyle(scormModal);
+    var isHidden = modalStyle.display === "none";
+
+    if (isHidden) {
+      templateSelect.value = "";
+      versionSelect.value = "";
+      downloadBtn.disabled = true;
+      errorMessage.style.display = "none";
+    }
+  });
+</script>
+
+
+
+
+
+
+{% endblock %}
+{% endblock %}

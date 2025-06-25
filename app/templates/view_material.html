@@ -1,0 +1,842 @@
+{% extends "base.html" %}
+
+{% block title %}{{ material_type|replace('_', ' ')|title }} - Module {{ module_number }}{% endblock %}
+
+{% block extra_js %}
+<script>
+function printMaterial() {
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    const materialContent = document.getElementById('material-content').innerHTML;
+    
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>{{ material_type|replace('_', ' ')|title }} - Module {{ module_number }}</title>
+            <style>
+                body {
+                    font-family: Georgia, serif;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 800px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }
+                h1, h2, h3, h4, h5, h6 {
+                    color: #2c3e50;
+                    margin-top: 1.5em;
+                    margin-bottom: 0.5em;
+                }
+                .content-section {
+                    margin-bottom: 2rem;
+                }
+                .activity-card {
+                    border: 1px solid #ddd;
+                    padding: 1rem;
+                    margin-bottom: 1rem;
+                    page-break-inside: avoid;
+                }
+                .section-divider {
+                    border: none;
+                    height: 2px;
+                    background: #007bff;
+                    margin: 2rem 0;
+                }
+                @media print {
+                    .no-print { display: none; }
+                    .activity-card { page-break-inside: avoid; }
+                }
+            </style>
+        </head>
+        <body>
+            <h1>{{ material_type|replace('_', ' ')|title }}</h1>
+            <h2>Module {{ module_number }}</h2>
+            <hr>
+            ${materialContent}
+        </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 250);
+}
+
+function exportToPDF() {
+    // For now, use the print dialog - in production you might want to use a PDF library
+    alert('PDF export functionality coming soon. For now, please use Print and select "Save as PDF".');
+    printMaterial();
+}
+
+function copyToClipboard() {
+    const materialContent = document.getElementById('material-content');
+    const textContent = materialContent.innerText || materialContent.textContent;
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textContent).then(() => {
+            showNotification('Content copied to clipboard!', 'success');
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+            fallbackCopyToClipboard(textContent);
+        });
+    } else {
+        fallbackCopyToClipboard(textContent);
+    }
+}
+
+function fallbackCopyToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        showNotification('Content copied to clipboard!', 'success');
+    } catch (err) {
+        showNotification('Failed to copy content. Please select and copy manually.', 'error');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'warning'} notification-toast`;
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+        ${message}
+    `;
+    
+    // Style the notification
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideInRight 0.3s ease-out;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    .notification-toast {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+`;
+document.head.appendChild(style);
+
+// Enhance reading experience
+document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth scrolling to internal links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+    
+    // Add copy buttons to code blocks
+    document.querySelectorAll('pre code').forEach((codeBlock) => {
+        const pre = codeBlock.parentNode;
+        const button = document.createElement('button');
+        button.className = 'btn btn-sm btn-outline-secondary copy-code-btn';
+        button.innerHTML = '<i class="fas fa-copy"></i>';
+        button.title = 'Copy code';
+        button.style.cssText = `
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 4px 8px;
+            border: 1px solid #ccc;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+        `;
+        
+        pre.style.position = 'relative';
+        pre.appendChild(button);
+        
+        button.addEventListener('click', () => {
+            const code = codeBlock.textContent;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(code).then(() => {
+                    button.innerHTML = '<i class="fas fa-check"></i>';
+                    setTimeout(() => {
+                        button.innerHTML = '<i class="fas fa-copy"></i>';
+                    }, 2000);
+                });
+            }
+        });
+    });
+    
+    // Add table responsiveness
+    document.querySelectorAll('table').forEach(table => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-responsive';
+        table.parentNode.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+        table.className += ' table table-striped';
+    });
+    
+    // Enhance blockquotes
+    document.querySelectorAll('blockquote').forEach(quote => {
+        quote.innerHTML = '<i class="fas fa-quote-left"></i> ' + quote.innerHTML;
+    });
+});
+</script>
+{% endblock %}
+
+{% block header_subtitle %}{{ material_type|replace('_', ' ')|title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center mb-3">
+                <div class="material-icon bg-primary text-white rounded-circle me-3">
+                    {% if material_type == 'content' %}
+                        <i class="fas fa-book"></i>
+                    {% elif material_type == 'lesson_plan' %}
+                        <i class="fas fa-clipboard-list"></i>
+                    {% elif material_type == 'activities' %}
+                        <i class="fas fa-users"></i>
+                    {% elif material_type == 'assessments' %}
+                        <i class="fas fa-tasks"></i>
+                    {% elif material_type == 'instructor_guide' %}
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    {% endif %}
+                </div>
+                <div>
+                    <h2 class="mb-1">{{ material_type|replace('_', ' ')|title }}</h2>
+                    <h4 class="text-muted mb-0">Module {{ module_number }}</h4>
+                </div>
+            </div>
+            
+            <!-- Material Stats -->
+            <div class="d-flex flex-wrap gap-3 mb-3">
+                {% if material.metadata %}
+                <span class="badge bg-info fs-6 px-3 py-2">
+                    <i class="fas fa-calendar"></i> {{ material.metadata.generated_date }}
+                </span>
+                {% if material.metadata.word_count %}
+                <span class="badge bg-success fs-6 px-3 py-2">
+                    <i class="fas fa-file-word"></i> {{ material.metadata.word_count }} words
+                </span>
+                {% endif %}
+                {% if material.metadata.estimated_reading_time %}
+                <span class="badge bg-warning fs-6 px-3 py-2">
+                    <i class="fas fa-clock"></i> {{ material.metadata.estimated_reading_time }}
+                </span>
+                {% endif %}
+                {% endif %}
+                <span class="badge bg-primary fs-6 px-3 py-2">
+                    <i class="fas fa-star"></i> Professional Quality
+                </span>
+            </div>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="btn-group mb-2">
+                <a href="{{ url_for('main.edit_material', analysis_id=analysis_id, module_id=module_number, material_type=material_type) }}" 
+                   class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Edit Material
+                </a>
+                <a href="{{ url_for('main.view_materials', analysis_id=analysis_id) }}" 
+                   class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-download"></i> Export Options
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="printMaterial()">
+                        <i class="fas fa-print"></i> Print
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="exportToPDF()">
+                        <i class="fas fa-file-pdf"></i> Export as PDF
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="copyToClipboard()">
+                        <i class="fas fa-copy"></i> Copy Content
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Material Content -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card material-content-card">
+                <div class="card-body p-0">
+                    <div id="material-content" class="material-display">
+                        
+                        {% if material_type == 'content' %}
+                            <!-- COMPREHENSIVE CONTENT DISPLAY -->
+                            {% if material.main_content %}
+                                <div class="content-section">
+                                    {{ material.main_content | markdown | safe }}
+                                </div>
+                            {% endif %}
+                            
+                            {% if material.supplementary_materials %}
+                                <div class="content-section supplementary-section">
+                                    <hr class="section-divider">
+                                    <h3 class="section-title">
+                                        <i class="fas fa-plus-circle text-success"></i> Supplementary Materials
+                                    </h3>
+                                    {{ material.supplementary_materials | markdown | safe }}
+                                </div>
+                            {% endif %}
+                            
+                            {% if material.interactive_elements %}
+                                <div class="content-section interactive-section">
+                                    <hr class="section-divider">
+                                    <h3 class="section-title">
+                                        <i class="fas fa-gamepad text-warning"></i> Interactive Elements
+                                    </h3>
+                                    <div class="row">
+                                        {% for key, value in material.interactive_elements.items() %}
+                                        <div class="col-md-6 mb-3">
+                                            <div class="interactive-card">
+                                                <h5>{{ key|replace('_', ' ')|title }}</h5>
+                                                <p>{{ value }}</p>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                        {% elif material_type == 'lesson_plan' %}
+                            <!-- LESSON PLAN DISPLAY -->
+                            {% if material.comprehensive_lesson_plan %}
+                                <div class="content-section">
+                                    {{ material.comprehensive_lesson_plan | markdown | safe }}
+                                </div>
+                            {% else %}
+                                <!-- Fallback for structured lesson plan -->
+                                {% if material.module_overview %}
+                                <div class="lesson-section">
+                                    <h3><i class="fas fa-eye text-primary"></i> Module Overview</h3>
+                                    <div class="content-box">
+                                        {{ material.module_overview | markdown | safe }}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if material.learning_objectives %}
+                                <div class="lesson-section">
+                                    <h3><i class="fas fa-bullseye text-success"></i> Learning Objectives</h3>
+                                    <div class="content-box">
+                                        <ul class="objectives-list">
+                                            {% for objective in material.learning_objectives %}
+                                            <li class="objective-item">{{ objective }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if material.time_allocation %}
+                                <div class="lesson-section">
+                                    <h3><i class="fas fa-clock text-warning"></i> Time Allocation</h3>
+                                    <div class="content-box">
+                                        {{ material.time_allocation | format_time_allocation | safe }}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if material.lesson_structure %}
+                                <div class="lesson-section">
+                                    <h3><i class="fas fa-sitemap text-info"></i> Lesson Structure</h3>
+                                    <div class="content-box">
+                                        {{ material.lesson_structure | markdown | safe }}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endif %}
+                            
+                        {% elif material_type == 'activities' %}
+                            <!-- ACTIVITIES DISPLAY -->
+                            {% if material.comprehensive_activities %}
+                                <div class="content-section">
+                                    {{ material.comprehensive_activities | markdown | safe }}
+                                </div>
+                            {% elif material.activities %}
+                                <div class="activities-grid">
+                                    {% for activity in material.activities %}
+                                    <div class="activity-card">
+                                        <div class="activity-header">
+                                            <h4 class="activity-title">
+                                                <i class="fas fa-play-circle text-primary"></i>
+                                                {{ activity.title }}
+                                            </h4>
+                                            {% if activity.duration %}
+                                            <span class="activity-duration badge bg-info">
+                                                <i class="fas fa-clock"></i> {{ activity.duration }}
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        {% if activity.type %}
+                                        <div class="activity-meta mb-3">
+                                            <span class="badge bg-secondary">{{ activity.type }}</span>
+                                            {% if activity.format %}
+                                            <span class="badge bg-outline-secondary">{{ activity.format }}</span>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if activity.purpose %}
+                                        <div class="activity-section">
+                                            <h6><i class="fas fa-target text-success"></i> Purpose</h6>
+                                            <p>{{ activity.purpose }}</p>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if activity.instructions %}
+                                        <div class="activity-section">
+                                            <h6><i class="fas fa-list text-primary"></i> Instructions</h6>
+                                            <div class="instructions-content">
+                                                {{ activity.instructions | markdown | safe }}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if activity.materials %}
+                                        <div class="activity-section">
+                                            <h6><i class="fas fa-tools text-warning"></i> Materials Needed</h6>
+                                            <div class="materials-content">
+                                                {{ activity.materials | markdown | safe }}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
+                        {% elif material_type == 'assessments' %}
+                            <!-- ASSESSMENTS DISPLAY -->
+                            {% if material.comprehensive_assessments %}
+                                <div class="content-section">
+                                    {{ material.comprehensive_assessments | markdown | safe }}
+                                </div>
+                            {% else %}
+                                {% if material.formative_assessments %}
+                                <div class="assessment-section">
+                                    <h3><i class="fas fa-check-circle text-success"></i> Formative Assessments</h3>
+                                    <div class="content-box">
+                                        {{ material.formative_assessments | format_assessments | safe }}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if material.summative_assessment %}
+                                <div class="assessment-section">
+                                    <h3><i class="fas fa-graduation-cap text-primary"></i> Summative Assessment</h3>
+                                    <div class="content-box">
+                                        {{ material.summative_assessment | format_assessments | safe }}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endif %}
+                            
+                        {% elif material_type == 'instructor_guide' %}
+                            <!-- INSTRUCTOR GUIDE DISPLAY -->
+                            {% if material.comprehensive_instructor_guide %}
+                                <div class="content-section">
+                                    {{ material.comprehensive_instructor_guide | markdown | safe }}
+                                </div>
+                            {% else %}
+                                {% if material.preparation_checklist %}
+                                <div class="guide-section">
+                                    <h3><i class="fas fa-clipboard-check text-success"></i> Preparation Checklist</h3>
+                                    <div class="content-box">
+                                        {{ material.preparation_checklist | markdown | safe }}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if material.facilitation_tips %}
+                                <div class="guide-section">
+                                    <h3><i class="fas fa-lightbulb text-warning"></i> Facilitation Tips</h3>
+                                    <div class="content-box">
+                                        {{ material.facilitation_tips | markdown | safe }}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if material.troubleshooting %}
+                                <div class="guide-section">
+                                    <h3><i class="fas fa-wrench text-danger"></i> Troubleshooting Guide</h3>
+                                    <div class="content-box">
+                                        {{ material.troubleshooting | markdown | safe }}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
+                        
+                        <!-- Fallback for raw content -->
+                        {% if not (material.main_content or material.comprehensive_lesson_plan or material.comprehensive_activities or material.comprehensive_assessments or material.comprehensive_instructor_guide) %}
+                            {% if material.raw_content %}
+                                <div class="content-section">
+                                    <div class="raw-content-notice">
+                                        <i class="fas fa-info-circle text-info"></i>
+                                        <strong>Note:</strong> This content is in raw format and may need formatting improvements.
+                                    </div>
+                                    {{ material.raw_content | markdown | safe }}
+                                </div>
+                            {% else %}
+                                <div class="content-section">
+                                    <div class="alert alert-info">
+                                        <h4><i class="fas fa-code text-info"></i> Structured Data View</h4>
+                                        <p>This material contains structured data. Below is a formatted view:</p>
+                                    </div>
+                                    <div class="structured-data">
+                                        {{ material | format_structured_data | safe }}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.material-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.material-content-card {
+    border: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.material-display {
+    padding: 2rem;
+    line-height: 1.7;
+    font-family: 'Georgia', serif;
+}
+
+.content-section {
+    margin-bottom: 2rem;
+}
+
+.section-divider {
+    margin: 3rem 0;
+    border: none;
+    height: 2px;
+    background: linear-gradient(to right, #007bff, transparent);
+}
+
+.section-title {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.content-box {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+    margin-bottom: 1.5rem;
+}
+
+.lesson-section, .assessment-section, .guide-section {
+    margin-bottom: 2.5rem;
+}
+
+.objectives-list {
+    list-style: none;
+    padding: 0;
+}
+
+.objective-item {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: white;
+    border-radius: 6px;
+    border-left: 4px solid #28a745;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.objective-item:before {
+    content: "✓";
+    color: #28a745;
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+
+.activities-grid {
+    display: grid;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.activity-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.activity-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.activity-title {
+    color: #2c3e50;
+    margin: 0;
+    flex: 1;
+}
+
+.activity-duration {
+    margin-left: 1rem;
+}
+
+.activity-meta {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.activity-section {
+    margin-bottom: 1.5rem;
+}
+
+.activity-section h6 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.instructions-content, .materials-content {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    border-left: 3px solid #007bff;
+}
+
+.interactive-card {
+    background: #e3f2fd;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #2196f3;
+}
+
+.interactive-card h5 {
+    color: #1565c0;
+    margin-bottom: 0.5rem;
+}
+
+.supplementary-section {
+    background: #f0f8ff;
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid #cce7ff;
+}
+
+.interactive-section {
+    background: #fff8e1;
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid #ffecb3;
+}
+
+.raw-content-notice {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.structured-data {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+/* Typography improvements */
+.material-display h1, .material-display h2 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.material-display h3, .material-display h4 {
+    color: #34495e;
+    font-weight: 500;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.material-display h5, .material-display h6 {
+    color: #495057;
+    font-weight: 500;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.material-display p {
+    margin-bottom: 1rem;
+    text-align: justify;
+}
+
+.material-display ul, .material-display ol {
+    margin-bottom: 1.5rem;
+    padding-left: 2rem;
+}
+
+.material-display li {
+    margin-bottom: 0.5rem;
+}
+
+.material-display blockquote {
+    border-left: 4px solid #007bff;
+    padding-left: 1rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    color: #6c757d;
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+.material-display table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.material-display th, .material-display td {
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+    text-align: left;
+}
+
+.material-display th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+.material-display code {
+    background: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    color: #e83e8c;
+}
+
+.material-display pre {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    border-left: 4px solid #007bff;
+}
+
+@media (max-width: 768px) {
+    .material-display {
+        padding: 1rem;
+    }
+    
+    .activity-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .activity-duration {
+        margin-left: 0;
+        margin-top: 0.5rem;
+    }
+}
+</style>
+{% endblock %}

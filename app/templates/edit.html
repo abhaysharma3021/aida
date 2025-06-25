@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ASID - Edit Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div class="container">
+		<div class="row">
+			<button onclick="window.location.href='/auth/logout'" class="btn btn-primary" style="margin-left: 100%">Logout</button>
+		</div>
+        <header>
+            <h1>Edit Analysis for "{{ course_topic }}"</h1>
+            <p class="edit-note">Make changes to the generated analyses below. These will be used in the course design phase.</p>
+        </header>
+        
+        <main>
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                <div class="flash-messages">
+                  {% for message in messages %}
+                    <div class="flash-message">{{ message }}</div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+            
+            <form method="POST">
+                <div class="edit-section">
+                    <h2>Audience Analysis</h2>
+                    <p class="edit-hint">Use Markdown formatting for headings (#), bold (**text**), lists (- item), etc.</p>
+                    <textarea name="audience_analysis" class="edit-textarea" rows="20">{{ audience_analysis }}</textarea>
+                </div>
+                
+                <div class="edit-section">
+                    <h2>Task Analysis</h2>
+                    <p class="edit-hint">Use Markdown formatting for headings (#), bold (**text**), lists (- item), etc.</p>
+                    <textarea name="task_analysis" class="edit-textarea" rows="20">{{ task_analysis }}</textarea>
+                </div>
+                
+                <div class="edit-actions">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a href="{{ url_for('main.results', analysis_id=analysis_id) }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </main>
+        
+        <footer>
+            <p>ASID Project - Milestone 1: Input Collection & Analysis</p>
+        </footer>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

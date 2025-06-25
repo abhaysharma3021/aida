@@ -1,0 +1,1075 @@
+/* Base styles */
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2c3e50;
+    --accent-color: #e74c3c;
+    --edit-color: #f39c12;
+    --light-color: #ecf0f1;
+    --dark-color: #34495e;
+    --success-color: #2ecc71;
+    --warning-color: #f39c12;
+    --text-color: #333;
+    --border-radius: 6px;
+    --box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: #f5f7fa;
+    padding: 20px 0;
+}
+
+.container {
+    width: 90%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Typography */
+h1, h2, h3, h4 {
+    color: var(--secondary-color);
+    margin-bottom: 0.5em;
+}
+
+h1 {
+    font-size: 2.2rem;
+    color: var(--primary-color);
+}
+
+h2 {
+    font-size: 1.6rem;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid #eee;
+}
+
+h3 {
+    font-size: 1.3rem;
+}
+
+/* Layout components */
+header {
+    margin-bottom: 2rem;
+}
+
+main {
+    margin-bottom: 2rem;
+}
+
+footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+    color: #777;
+    font-size: 0.9rem;
+}
+
+/* Form styles */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.form-control {
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: var(--border-radius);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    color: #495057;
+    background-color: #fff;
+    border-color: var(--primary-color);
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.help-text {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.processing-notice {
+    display: block;
+    margin-top: 0.5rem;
+    color: #6c757d;
+    font-size: 0.875rem;
+    font-style: italic;
+}
+
+.error {
+    color: var(--accent-color);
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.field-error {
+    color: var(--accent-color);
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.error-field {
+    border-color: var(--accent-color);
+}
+
+.char-counter {
+    text-align: right;
+    color: #6c757d;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.char-counter.warning {
+    color: var(--warning-color);
+    font-weight: bold;
+}
+
+/* Button styles */
+.btn {
+    display: inline-block;
+    font-weight: 400;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    user-select: none;
+    border: 1px solid transparent;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: var(--border-radius);
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    cursor: pointer;
+}
+
+.btn-primary {
+    color: white;
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+}
+
+.btn-secondary {
+    color: white;
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.btn-secondary:hover {
+    background-color: #1a252f;
+    border-color: #1a252f;
+}
+
+.btn-edit {
+    color: white;
+    background-color: var(--edit-color);
+    border-color: var(--edit-color);
+}
+
+.btn-edit:hover {
+    background-color: #e67e22;
+    border-color: #e67e22;
+}
+
+.btn-small {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+/* Analysis Results page */
+.results-info {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.analysis-section {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.section-header h2 {
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
+.section-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.analysis-content {
+    line-height: 1.7;
+    transition: max-height 0.3s ease-out;
+    overflow: hidden;
+}
+
+.analysis-content.collapsed {
+    max-height: 0;
+}
+
+/* Edit page styles */
+.edit-note {
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.edit-hint {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.edit-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    font-family: 'Courier New', Courier, monospace;
+    line-height: 1.5;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.edit-section {
+    margin-bottom: 2rem;
+}
+
+.edit-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* Markdown-rendered content */
+.analysis-content h1, 
+.analysis-content h2, 
+.analysis-content h3 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    color: var(--secondary-color);
+}
+
+.analysis-content h1 {
+    font-size: 1.8rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.3rem;
+}
+
+.analysis-content h2 {
+    font-size: 1.5rem;
+    border-bottom: none;
+}
+
+.analysis-content h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.analysis-content ul, 
+.analysis-content ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.analysis-content li {
+    margin-bottom: 0.5rem;
+}
+
+.analysis-content p {
+    margin-bottom: 0.75rem;
+}
+
+.analysis-content strong {
+    font-weight: 600;
+}
+
+.analysis-content em {
+    font-style: italic;
+}
+
+.analysis-content blockquote {
+    border-left: 3px solid var(--primary-color);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: #666;
+}
+
+.analysis-content hr {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 1.5rem 0;
+}
+
+.analysis-content code {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #f5f5f5;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+}
+
+.next-steps {
+    background-color: #f8f9fa;
+    border-left: 4px solid var(--primary-color);
+    padding: 1rem;
+    margin-bottom: 2rem;
+}
+
+.actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+/* Flash messages */
+.flash-messages {
+    margin-bottom: 1.5rem;
+}
+
+.flash-message {
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: var(--border-radius);
+    background-color: var(--warning-color);
+    color: white;
+}
+
+/* Loading spinner */
+.spinner {
+    display: inline-block;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 3px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.8rem;
+    }
+    
+    h2 {
+        font-size: 1.4rem;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .section-actions {
+        margin-top: 0.5rem;
+    }
+    
+    .actions {
+        flex-direction: column;
+    }
+    
+    .actions .btn {
+        width: 100%;
+    }
+    
+    .edit-actions {
+        flex-direction: column;
+    }
+    
+    .edit-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Analysis Cards for Results Page */
+.analysis-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.analysis-card {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    flex: 1;
+    min-width: 250px;
+    max-width: 400px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.analysis-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.analysis-card .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #eaeaea;
+    padding: 15px;
+}
+
+.analysis-card .card-header h2 {
+    color: var(--secondary-color);
+    font-size: 1.5rem;
+    margin: 0;
+    text-align: center;
+    border-bottom: none;
+}
+
+.analysis-card .card-body {
+    padding: 20px;
+    text-align: center;
+}
+
+.analysis-card .card-body p {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.analysis-card .btn {
+    display: inline-block;
+    width: 100%;
+}
+
+/* Course Information Display */
+.course-info {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin: 20px 0;
+    padding: 20px;
+}
+
+.course-info h3 {
+    border-bottom: 1px solid #eaeaea;
+    color: var(--secondary-color);
+    margin-top: 0;
+    padding-bottom: 10px;
+}
+
+.course-info table {
+    width: 100%;
+}
+
+.course-info table th {
+    color: #555;
+    font-weight: 600;
+    padding: 8px 10px;
+    text-align: left;
+    width: 30%;
+}
+
+.course-info table td {
+    padding: 8px 10px;
+}
+
+/* Navigation Buttons for Analysis Pages */
+.navigation-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-between;
+    margin: 20px 0;
+}
+
+.navigation-buttons .btn {
+    flex: 1;
+    min-width: 180px;
+}
+
+/* Make sure all analysis content text is black */
+.analysis-content,
+.analysis-content h1, 
+.analysis-content h2, 
+.analysis-content h3, 
+.analysis-content h4, 
+.analysis-content h5, 
+.analysis-content h6,
+.analysis-content p,
+.analysis-content li,
+.analysis-content strong {
+    color: black;
+}
+
+.analysis-content h1,
+.analysis-content h2,
+.analysis-content h3 {
+    font-weight: bold;
+}
+
+/* Responsive adjustments for navigation buttons */
+@media (max-width: 768px) {
+    .navigation-buttons {
+        flex-direction: column;
+    }
+    
+    .navigation-buttons .btn {
+        margin-bottom: 10px;
+        width: 100%;
+    }
+    
+    .analysis-cards {
+        flex-direction: column;
+    }
+    
+    .analysis-card {
+        max-width: 100%;
+    }
+}
+/* Terminal Objectives Form Section */
+.terminal-objectives-section {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: 1.5rem;
+    margin: 2rem 0;
+}
+
+.terminal-objectives-section h2 {
+    color: var(--secondary-color);
+    margin-bottom: 1rem;
+}
+.btn-download {
+    color: white;
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.btn-download:hover {
+    background-color: #27ae60;
+    border-color: #27ae60;
+}
+
+/* Button styles for analysis pages */
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn-outline-secondary {
+    color: #6c757d;
+    background-color: transparent;
+    border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    color: #fff;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-warning {
+    color: #212529;
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
+
+.btn-warning:hover {
+    color: #212529;
+    background-color: #e0a800;
+    border-color: #d39e00;
+}
+
+.btn-success {
+    color: #fff;
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover {
+    color: #fff;
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+/* Audience Analysis Specific Styling */
+.analysis-content strong {
+    display: inline-block;
+    margin-right: 5px;
+}
+
+/* Section headers in audience analysis */
+.analysis-content p:has(strong:first-child:contains("Profile:")),
+.analysis-content p:has(strong:first-child:contains("Key Characteristics:")),
+.analysis-content p:has(strong:first-child:contains("Implications for Instructional Design:")) {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--secondary-color);
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.3rem;
+}
+
+/* Format subsection labels */
+.analysis-content p:has(em:contains("Course Topic:")) em,
+.analysis-content p:has(em:contains("Audience Type:")) em,
+.analysis-content p:has(em:contains("Knowledge Base:")) em,
+.analysis-content p:has(em:contains("Learning Style:")) em,
+.analysis-content p:has(em:contains("Motivation:")) em,
+.analysis-content p:has(em:contains("Needs:")) em {
+    font-weight: 600;
+    color: var(--dark-color);
+    font-style: normal;
+}
+
+/* Add proper spacing between sections */
+.analysis-content p + ul {
+    margin-top: 0.5rem;
+}
+
+/* Proper indentation for list items */
+.analysis-content ul {
+    padding-left: 2rem;
+    list-style-type: disc;
+}
+
+/* Remove asterisks that appear as text */
+.analysis-content p:contains("*") {
+    list-style-type: none;
+}
+
+/* Make profile items display better */
+.analysis-content p:has(strong:contains("Profile:")) + p {
+    margin-left: 1rem;
+}
+
+/* Format key-value pairs better */
+.analysis-content p em + strong,
+.analysis-content p strong + em {
+    margin-left: 0.25rem;
+}
+
+/* Main Styles for ASID Project */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f8f9fa;
+    padding-bottom: 2rem;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+header {
+    text-align: center;
+    margin: 2rem 0;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+header h1 {
+    color: #007bff;
+    margin-bottom: 0.5rem;
+}
+
+header h2 {
+    color: #6c757d;
+    font-weight: normal;
+    font-size: 1.3rem;
+}
+
+footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+    color: #6c757d;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-control {
+    border-radius: 0.25rem;
+    border: 1px solid #ced4da;
+    padding: 0.5rem 0.75rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.help-text {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.error {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.btn {
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.processing-notice {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+/* Analysis Display Styles */
+.analysis-container {
+    background-color: white;
+    border-radius: 0.25rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.analysis-header {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 0.5rem;
+}
+
+.analysis-title {
+    margin-bottom: 0.25rem;
+}
+
+.analysis-meta {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.analysis-content {
+    line-height: 1.7;
+}
+
+.analysis-content h1,
+.analysis-content h2,
+.analysis-content h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.analysis-content p {
+    margin-bottom: 1rem;
+}
+
+.analysis-content ul,
+.analysis-content ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.actions-container {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Card Styles */
+.card {
+    margin-bottom: 1.5rem;
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    padding: 0.75rem 1.25rem;
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+/* Tab Styles */
+.nav-tabs .nav-link {
+    border: 1px solid transparent;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+    color: #495057;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: #e9ecef #e9ecef #dee2e6;
+}
+
+.nav-tabs .nav-link.active {
+    color: #495057;
+    background-color: #fff;
+    border-color: #dee2e6 #dee2e6 #fff;
+}
+
+/* Responsive Styles */
+@media (max-width: 767.98px) {
+    header h1 {
+        font-size: 1.75rem;
+    }
+    
+    header h2 {
+        font-size: 1.1rem;
+    }
+    
+    .actions-container {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .actions-container .btn {
+        width: 100%;
+    }
+}
+
+/* STRUCTURED DATA DISPLAY STYLES - Add this to the end of your style.css */
+
+.structured-display {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.data-item {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border-radius: 8px;
+    background: white;
+    border-left: 4px solid #007bff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.data-item.level-0 {
+    border-left-color: #007bff;
+    background: #f8f9ff;
+}
+
+.data-item.level-1 {
+    border-left-color: #28a745;
+    background: #f0fff4;
+    margin-left: 1rem;
+}
+
+.data-item.level-2 {
+    border-left-color: #ffc107;
+    background: #fffbf0;
+    margin-left: 2rem;
+}
+
+.data-key {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+}
+
+.data-key i {
+    margin-right: 0.5rem;
+    width: 16px;
+}
+
+.data-value {
+    color: #495057;
+    line-height: 1.6;
+}
+
+.data-list {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.data-list li {
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0;
+}
+
+.simple-value {
+    color: #495057;
+    font-weight: 500;
+}
+
+.formatted-text {
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border-left: 3px solid #007bff;
+}
+
+/* Time allocation specific styles */
+.time-allocation {
+    display: grid;
+    gap: 0.75rem;
+    margin: 1rem 0;
+}
+
+.time-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border-left: 3px solid #007bff;
+}
+
+.time-value {
+    font-weight: 600;
+    color: #007bff;
+}
+
+/* Assessment content specific styles */
+.assessment-content {
+    margin: 1rem 0;
+}
+
+.assessment-item {
+    margin-bottom: 2rem;
+    padding: 1.25rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 4px solid #28a745;
+}
+
+.assessment-title {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.assessment-title i {
+    margin-right: 0.5rem;
+}
+
+.assessment-description {
+    margin-bottom: 1rem;
+}
+
+.assessment-list {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.assessment-list li {
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0;
+}
+
+.assessment-details {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+}
+
+.detail-item {
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0;
+}
+
+.detail-item strong {
+    color: #495057;
+}
+
+/* Responsive adjustments for structured data */
+@media (max-width: 768px) {
+    .data-item.level-1 {
+        margin-left: 0.5rem;
+    }
+    
+    .data-item.level-2 {
+        margin-left: 1rem;
+    }
+    
+    .time-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .time-value {
+        margin-top: 0.25rem;
+    }
+}

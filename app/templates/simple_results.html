@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Results</title>
+    <style>
+        body { font-family: Arial; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .result { background: #f5f5f5; padding: 15px; border-radius: 5px; }
+        .info { color: #666; font-size: 0.9em; margin-bottom: 10px; }
+        .back-btn { display: inline-block; margin-top: 20px; padding: 10px 15px; background: blue; color: white; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+		<div class="row">
+			<button onclick="window.location.href='/auth/logout'" class="btn btn-primary" style="margin-left: 100%">Logout</button>
+		</div>
+        <h1>Results for "{{ topic }}"</h1>
+        <div class="info">Generated on {{ date }}</div>
+        
+        <div class="result">
+            {{ result | replace('\n', '<br>') | safe }}
+        </div>
+        
+        <a href="{{ url_for('index') }}" class="back-btn">Back to Form</a>
+    </div>
+</body>
+</html>

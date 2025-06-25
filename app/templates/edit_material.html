@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ material_type|replace('_', ' ')|title }} - Module {{ module_id }}{% endblock %}
+
+{% block header_subtitle %}Edit Material{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h3 class="mb-2">Edit {{ material_type|replace('_', ' ')|title }}</h3>
+            <p class="text-muted">Module {{ module_id }} - Make changes to the material content below</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{{ url_for('main.view_material', analysis_id=analysis_id, module_id=module_id, material_type=material_type) }}" 
+               class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Material
+            </a>
+        </div>
+    </div>
+
+    <form method="POST">
+        <div class="row">
+            <div class="col-lg-9">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-edit"></i> Material Content
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="material_content" class="form-label">Content (Markdown Format)</label>
+                            <textarea class="form-control" id="material_content" name="material_content" rows="25">{{ material_content }}</textarea>
+                            <div class="form-text">
+                                Use Markdown formatting for headings (#), bold (**text**), lists (- item), etc.
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <button type="button" id="previewBtn" class="btn btn-info">
+                                <i class="fas fa-eye"></i> Preview
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3">
+                <!-- Markdown Help Card -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">Markdown Help</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><code># Heading 1</code></li>
+                            <li class="list-group-item"><code>## Heading 2</code></li>
+                            <li class="list-group-item"><code>### Heading 3</code></li>
+                            <li class="list-group-item"><code>**bold text**</code></li>
+                            <li class="list-group-item"><code>*italic text*</code></li>
+                            <li class="list-group-item"><code>- Bullet point</code></li>
+                            <li class="list-group-item"><code>1. Numbered list</code></li>
+                            <li class="list-group-item"><code>`code`</code></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Material Type Info -->
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0">Material Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Type:</strong> {{ material_type|replace('_', ' ')|title }}</p>
+                        <p><strong>Module:</strong> {{ module_id }}</p>
+                        <p class="mb-0"><strong>Format:</strong> Markdown</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalLabel">Material Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="preview-content" class="material-preview"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.material-preview {
+    font-family: Georgia, serif;
+    line-height: 1.7;
+    color: #333;
+}
+
+.material-preview h1, .material-preview h2, .material-preview h3,
+.material-preview h4, .material-preview h5, .material-preview h6 {
+    color: #2c3e50;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.material-preview p {
+    margin-bottom: 1rem;
+}
+
+.material-preview ul, .material-preview ol {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+
+.material-preview blockquote {
+    border-left: 4px solid #007bff;
+    padding-left: 1rem;
+    margin: 1rem 0;
+    font-style: italic;
+    color: #6c757d;
+}
+
+.material-preview code {
+    background: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+}
+
+.material-preview pre {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+}
+</style>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-resize textarea
+    const textarea = document.getElementById('material_content');
+    textarea.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
+    
+    // Initialize height
+    textarea.style.height = (textarea.scrollHeight) + 'px';
+    
+    // Preview functionality
+    document.getElementById('previewBtn').addEventListener('click', function() {
+        const content = document.getElementById('material_content').value;
+        const previewContent = document.getElementById('preview-content');
+        
+        // Convert markdown to HTML
+        if (typeof marked !== 'undefined') {
+            previewContent.innerHTML = marked.parse(content);
+        } else {
+            // Fallback if marked is not loaded
+            previewContent.innerHTML = '<pre>' + content + '</pre>';
+        }
+        
+        // Show modal
+        const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+        previewModal.show();
+    });
+    
+    // Save shortcut
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            document.querySelector('form').submit();
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

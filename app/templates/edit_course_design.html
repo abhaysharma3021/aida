@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Course Design - {{ course_topic }}{% endblock %}
+
+{% block header_subtitle %}Edit Course Design{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Progress indicator -->
+    <div class="progress mb-4">
+        <div class="progress-bar bg-warning" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">Phase 2: Editing Course Design</div>
+    </div>
+    
+    <h3 class="mb-2">Edit Course Design: {{ course_topic }}</h3>
+    
+    <form method="POST" action="{{ url_for('main.edit_course_design', analysis_id=analysis_id) }}">
+        <div class="row">
+            <!-- Main Content Column -->
+            <div class="col-lg-9">
+                <!-- Tab navigation -->
+                <ul class="nav nav-tabs mb-4" id="editTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="edit-structure-tab" data-bs-toggle="tab" data-bs-target="#edit-structure" type="button" role="tab" aria-controls="edit-structure" aria-selected="true">
+                            <i class="fas fa-sitemap"></i> Course Structure
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="edit-strategies-tab" data-bs-toggle="tab" data-bs-target="#edit-strategies" type="button" role="tab" aria-controls="edit-strategies" aria-selected="false">
+                            <i class="fas fa-chalkboard-teacher"></i> Instructional Strategies
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="edit-assessment-tab" data-bs-toggle="tab" data-bs-target="#edit-assessment" type="button" role="tab" aria-controls="edit-assessment" aria-selected="false">
+                            <i class="fas fa-tasks"></i> Assessment Plan
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="editTabContent">
+                    <!-- Course Structure Tab -->
+                    <div class="tab-pane fade show active" id="edit-structure" role="tabpanel" aria-labelledby="edit-structure-tab">
+                        <div class="card mb-4">
+                            <div class="card-header bg-warning text-dark">
+                                <h4 class="mb-0">Edit Course Structure</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="course_structure" class="form-label">Course Structure Content (Markdown Format)</label>
+                                    <textarea class="form-control" id="course_structure" name="course_structure" rows="20">{{ course_structure }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Instructional Strategies Tab -->
+                    <div class="tab-pane fade" id="edit-strategies" role="tabpanel" aria-labelledby="edit-strategies-tab">
+                        <div class="card mb-4">
+                            <div class="card-header bg-warning text-dark">
+                                <h4 class="mb-0">Edit Instructional Strategies</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="instructional_strategies" class="form-label">Instructional Strategies Content (Markdown Format)</label>
+                                    <textarea class="form-control" id="instructional_strategies" name="instructional_strategies" rows="20">{{ instructional_strategies }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Assessment Plan Tab -->
+                    <div class="tab-pane fade" id="edit-assessment" role="tabpanel" aria-labelledby="edit-assessment-tab">
+                        <div class="card mb-4">
+                            <div class="card-header bg-warning text-dark">
+                                <h4 class="mb-0">Edit Assessment Plan</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="assessment_plan" class="form-label">Assessment Plan Content (Markdown Format)</label>
+                                    <textarea class="form-control" id="assessment_plan" name="assessment_plan" rows="20">{{ assessment_plan }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action buttons for all tabs -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <a href="{{ url_for('main.view_course_design', analysis_id=analysis_id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="col-lg-3">
+                <!-- Markdown Help Card -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Markdown Help</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><code># Heading 1</code></li>
+                            <li class="list-group-item"><code>## Heading 2</code></li>
+                            <li class="list-group-item"><code>### Heading 3</code></li>
+                            <li class="list-group-item"><code>**bold text**</code></li>
+                            <li class="list-group-item"><code>*italic text*</code></li>
+                            <li class="list-group-item"><code>- Bullet point</code></li>
+                            <li class="list-group-item"><code>1. Numbered list</code></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Preview Button -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <button id="previewBtn" type="button" class="btn btn-info w-100">
+                            <i class="fas fa-eye"></i> Preview Changes
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Navigation Card -->
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Navigation</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            <a href="{{ url_for('main.audience_analysis', analysis_id=analysis_id) }}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-users"></i> Audience Analysis
+                            </a>
+                            <a href="{{ url_for('main.task_analysis', analysis_id=analysis_id) }}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-list"></i> Task Analysis
+                            </a>
+                            <a href="{{ url_for('main.view_course_design', analysis_id=analysis_id) }}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-sitemap"></i> View Course Design
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalLabel">Preview Course Design</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Tab navigation -->
+                <ul class="nav nav-tabs mb-4" id="previewTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="preview-structure-tab" data-bs-toggle="tab" data-bs-target="#preview-structure" type="button" role="tab" aria-controls="preview-structure" aria-selected="true">
+                            <i class="fas fa-sitemap"></i> Course Structure
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="preview-strategies-tab" data-bs-toggle="tab" data-bs-target="#preview-strategies" type="button" role="tab" aria-controls="preview-strategies" aria-selected="false">
+                            <i class="fas fa-chalkboard-teacher"></i> Instructional Strategies
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="preview-assessment-tab" data-bs-toggle="tab" data-bs-target="#preview-assessment" type="button" role="tab" aria-controls="preview-assessment" aria-selected="false">
+                            <i class="fas fa-tasks"></i> Assessment Plan
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="previewTabContent">
+                    <div class="tab-pane fade show active" id="preview-structure" role="tabpanel" aria-labelledby="preview-structure-tab">
+                        <div id="preview-structure-content"></div>
+                    </div>
+                    <div class="tab-pane fade" id="preview-strategies" role="tabpanel" aria-labelledby="preview-strategies-tab">
+                        <div id="preview-strategies-content"></div>
+                    </div>
+                    <div class="tab-pane fade" id="preview-assessment" role="tabpanel" aria-labelledby="preview-assessment-tab">
+                        <div id="preview-assessment-content"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    // Preview functionality
+    document.getElementById('previewBtn').addEventListener('click', function() {
+        // Get content from all tabs
+        const structureContent = document.getElementById('course_structure').value;
+        const strategiesContent = document.getElementById('instructional_strategies').value;
+        const assessmentContent = document.getElementById('assessment_plan').value;
+        
+        // Convert markdown to HTML
+        document.getElementById('preview-structure-content').innerHTML = marked.parse(structureContent);
+        document.getElementById('preview-strategies-content').innerHTML = marked.parse(strategiesContent);
+        document.getElementById('preview-assessment-content').innerHTML = marked.parse(assessmentContent);
+        
+        // Show modal
+        const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+        previewModal.show();
+    });
+    
+    // Auto-resize textareas
+    document.querySelectorAll('textarea').forEach(textarea => {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+        
+        // Initialize height
+        textarea.style.height = (textarea.scrollHeight) + 'px';
+    });
+    
+    // Tab change handler to preserve scroll position
+    let currentScrollPosition = 0;
+    
+    document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(e) {
+            window.scrollTo(0, currentScrollPosition);
+        });
+        
+        tab.addEventListener('show.bs.tab', function(e) {
+            currentScrollPosition = window.scrollY;
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

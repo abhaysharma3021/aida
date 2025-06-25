@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Prepare Course Design - {{ course_topic }}{% endblock %}
+
+{% block header_subtitle %}Course Design Preparation{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Progress indicator -->
+    <div class="progress mb-4">
+        <div class="progress-bar bg-info" role="progressbar" style="width: 66%" aria-valuenow="66" aria-valuemin="0" aria-valuemax="100">Phase 2: Course Design Preparation</div>
+    </div>
+    
+    <h3 class="mb-3">Prepare Course Design: {{ course_topic }}</h3>
+    <p class="text-muted">Audience Level: {{ audience_type | capitalize }} | Generated on {{ current_date }}</p>
+    
+    <div class="row">
+        <!-- Main Content Column -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">Additional Course Design Requirements</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('main.prepare_course_design', analysis_id=analysis_id) }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.course_duration.label(class="form-label") }}
+                                    {{ form.course_duration(class="form-control") }}
+                                    <small class="form-text text-muted">Example: 3 days, 8 weeks, 30 hours, etc.</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.delivery_format.label(class="form-label") }}
+                                    {{ form.delivery_format(class="form-select") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.module_count.label(class="form-label") }}
+                            {{ form.module_count(class="form-control", min=1, max=10) }}
+                            <small class="form-text text-muted">Recommended: 3-7 modules depending on course scope</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.additional_requirements.label(class="form-label") }}
+                            {{ form.additional_requirements(class="form-control", rows=5) }}
+                            <small class="form-text text-muted">
+                                Specify any additional requirements, constraints, or preferences for the course design.
+                                Examples: industry regulations, certification requirements, specific tools/technologies, etc.
+                            </small>
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Course Summary Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Analysis Summary</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title">{{ course_topic }}</h6>
+                    <p><strong>Audience:</strong> {{ audience_type | capitalize }}</p>
+                    <p><strong>Terminal Objectives:</strong></p>
+                    <div class="terminal-objectives-preview">
+                        {{ terminal_objectives | truncate(150) }}
+                    </div>
+                    
+                    <div class="mt-3">
+                        <a href="{{ url_for('main.audience_analysis', analysis_id=analysis_id) }}" class="btn btn-sm btn-outline-secondary me-2">View Audience Analysis</a>
+                        <a href="{{ url_for('main.task_analysis', analysis_id=analysis_id) }}" class="btn btn-sm btn-outline-secondary">View Task Analysis</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tips Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Tips for Course Design</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">Align structure with learning objectives</li>
+                        <li class="list-group-item">Consider progression from simple to complex</li>
+                        <li class="list-group-item">Balance theory and practical application</li>
+                        <li class="list-group-item">Include diverse assessment methods</li>
+                        <li class="list-group-item">Account for different learning styles</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Navigation Card -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('main.task_analysis', analysis_id=analysis_id) }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Task Analysis
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

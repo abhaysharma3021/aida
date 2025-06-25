@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ASID - Analysis Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+		<div class="row">
+			<button onclick="window.location.href='/auth/logout'" class="btn btn-primary" style="margin-left: 100%">Logout</button>
+		</div>
+        <header>
+            <h1>Analysis Results for "{{ course_topic }}"</h1>
+            <div class="results-info">Generated on {{ current_date }}</div>
+        </header>
+        
+        <main>
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                <div class="flash-messages">
+                  {% for message in messages %}
+                    <div class="flash-message">{{ message }}</div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+            
+            <div class="analysis-cards">
+                <div class="analysis-card">
+                    <div class="card-header">
+                        <h2>Audience Analysis</h2>
+                    </div>
+                    <div class="card-body">
+                        <p>View detailed information about the target audience for this course.</p>
+                        <a href="{{ url_for('main.audience_analysis', analysis_id=analysis_id) }}" class="btn btn-primary">
+                            <i class="fas fa-users"></i> View Audience Analysis
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="analysis-card">
+                    <div class="card-header">
+                        <h2>Task Analysis</h2>
+                    </div>
+                    <div class="card-body">
+                        <p>View key learning tasks and objectives for this course.</p>
+                        <a href="{{ url_for('main.task_analysis', analysis_id=analysis_id) }}" class="btn btn-primary">
+                            <i class="fas fa-tasks"></i> View Task Analysis
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="course-info">
+                <h3>Course Information</h3>
+                <table>
+                    <tr>
+                        <th>Course Topic:</th>
+                        <td>{{ course_topic }}</td>
+                    </tr>
+                    <tr>
+                        <th>Audience Type:</th>
+                        <td>{{ audience_type|title }}</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="next-steps">
+                <h3>Next Steps</h3>
+                <p>These analyses will be the foundation for your course design. In the next phase, you'll use these to generate a structured course design with modules and instructional strategies.</p>
+            </div>
+            
+            <div class="actions">
+                <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-plus"></i> Create Another Analysis
+                </a>
+                <a href="{{ url_for('main.generate_course_design', analysis_id=analysis_id) }}" class="btn btn-primary proceed-btn">
+                    <i class="fas fa-graduation-cap"></i> Proceed to Course Design
+                </a>
+            </div>
+        </main>
+        
+        <footer>
+            <p>ASID Project - Milestone 1: Input Collection & Analysis</p>
+        </footer>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

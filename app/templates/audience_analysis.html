@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ASID - Audience Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+		<div class="row">
+			<button onclick="window.location.href='/auth/logout'" class="btn btn-primary" style="margin-left: 100%">Logout</button>
+		</div>
+        <header>
+            <h1>Analysis Results for "{{ course_topic }}"</h1>
+            <div class="results-info">Generated on {{ current_date }}</div>
+        </header>
+        
+        <main>
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                <div class="flash-messages">
+                  {% for message in messages %}
+                    <div class="flash-message">{{ message }}</div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+            
+            <div class="analysis-section audience-section">
+                <div class="section-header">
+                    <h2>Audience Analysis</h2>
+                    <div class="section-actions">
+                        <button id="copyBtn" class="btn btn-sm btn-outline-secondary btn-copy" data-content="audience-content">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                        <button id="hideBtn" class="btn btn-sm btn-outline-secondary btn-hide" data-target="audience-content">
+                            <i class="fas fa-eye-slash"></i> Hide
+                        </button>
+                        <a href="{{ url_for('main.edit_audience_analysis', analysis_id=analysis_id) }}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="{{ url_for('main.download_audience_analysis', analysis_id=analysis_id) }}" class="btn btn-sm btn-success">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </div>
+                </div>
+                <div id="audience-content" class="analysis-content">
+                    {{ audience_analysis | safe }}
+                </div>
+            </div>
+            
+            {% if 'terminal_objectives' in analysis_data %}
+            <div class="terminal-objectives-section">
+                <h2>Terminal Objectives</h2>
+                <p class="help-text">These are the learning outcomes you've specified for this course. You can modify them below.</p>
+                
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="form-group">
+                        {{ form.terminal_objectives.label }}
+                        <div class="help-text">List the main learning outcomes that students should achieve by the end of the course.</div>
+                        {{ form.terminal_objectives(class="form-control", rows=5) }}
+                        {% if form.terminal_objectives.errors %}
+                            <div class="error">
+                                {% for error in form.terminal_objectives.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.submit(class="btn btn-primary", value="Update Task Analysis") }}
+                        <div class="processing-notice">This will update the task analysis based on your changes.</div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="navigation-buttons">
+                <a href="{{ url_for('main.task_analysis', analysis_id=analysis_id) }}" class="btn btn-primary">
+                    <i class="fas fa-tasks"></i> View Current Task Analysis
+                </a>
+                <a href="{{ url_for('main.generate_course_design', analysis_id=analysis_id) }}" class="btn btn-primary proceed-btn">
+                    <i class="fas fa-graduation-cap"></i> Proceed to Course Design
+                </a>
+                <a href="{{ url_for('main.index') }}" class="btn btn-success">
+                    <i class="fas fa-plus-circle"></i> Create New Course
+                </a>
+            </div>
+            {% else %}
+            <div class="terminal-objectives-section">
+                <h2>Terminal Objectives</h2>
+                <p class="help-text">Now that you've reviewed the audience analysis, please specify the terminal objectives for this course.</p>
+                
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="form-group">
+                        {{ form.terminal_objectives.label }}
+                        <div class="help-text">List the main learning outcomes that students should achieve by the end of the course.</div>
+                        {{ form.terminal_objectives(class="form-control", rows=5, placeholder="Enter each objective on a new line. Example:\n1. Identify key components of the system\n2. Apply concepts to solve real-world problems\n3. Evaluate the effectiveness of different approaches") }}
+                        {% if form.terminal_objectives.errors %}
+                            <div class="error">
+                                {% for error in form.terminal_objectives.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.submit(class="btn btn-primary") }}
+                        <div class="processing-notice">This may take a minute to generate the task analysis.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="navigation-buttons">
+                <a href="{{ url_for('main.index') }}" class="btn btn-success">
+                    <i class="fas fa-plus-circle"></i> Create New Course
+                </a>
+            </div>
+            {% endif %}
+        </main>
+        
+        <footer>
+            <p>ASID Project - Milestone 1: Input Collection & Analysis</p>
+        </footer>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

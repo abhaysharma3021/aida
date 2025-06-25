@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ASID - Course Input</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div class="container">
+		<div class="row">
+			<button onclick="window.location.href='/auth/logout'" class="btn btn-primary" style="margin-left: 100%">Logout</button>
+		</div>
+        <header>
+            <h1>Autonomous System for Instructional Design</h1>
+            <h2>Course Input Form</h2>
+        </header>
+        
+        <main>
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                
+                <div class="form-group">
+                    {{ form.course_topic.label }}
+                    {{ form.course_topic(class="form-control", placeholder="e.g., Python Programming, Project Management") }}
+                    {% if form.course_topic.errors %}
+                        <div class="error">
+                            {% for error in form.course_topic.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.audience_type.label }}
+                    {{ form.audience_type(class="form-control") }}
+                    {% if form.audience_type.errors %}
+                        <div class="error">
+                            {% for error in form.audience_type.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.job_titles.label }}
+                    <div class="help-text">List the common job titles of your target audience. This helps tailor the content to their roles.</div>
+                    {{ form.job_titles(class="form-control", rows=3, placeholder="Example:\nSoftware Team Lead\nSenior Developer\nProject Manager") }}
+                    {% if form.job_titles.errors %}
+                        <div class="error">
+                            {% for error in form.job_titles.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.submit(class="btn btn-primary") }}
+                    <div class="processing-notice">This will take you to the audience analysis page.</div>
+                </div>
+            </form>
+        </main>
+        
+        <footer>
+            <p>ASID Project - Milestone 1: Input Collection & Analysis</p>
+        </footer>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

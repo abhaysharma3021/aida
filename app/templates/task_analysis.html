@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ASID - Task Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+		<div class="row">
+			<button onclick="window.location.href='/auth/logout'" class="btn btn-primary" style="margin-left: 100%">Logout</button>
+		</div>
+        <header>
+            <h1>Analysis Results for "{{ course_topic }}"</h1>
+            <div class="results-info">Generated on {{ current_date }}</div>
+        </header>
+        
+        <main>
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                <div class="flash-messages">
+                  {% for message in messages %}
+                    <div class="flash-message">{{ message }}</div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+            
+            <div class="analysis-section task-section">
+                <div class="section-header">
+                    <h2>Task Analysis</h2>
+                    <div class="section-actions">
+                        <button id="copyBtn" class="btn btn-sm btn-outline-secondary btn-copy" data-content="task-content">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                        <button id="hideBtn" class="btn btn-sm btn-outline-secondary btn-hide" data-target="task-content">
+                            <i class="fas fa-eye-slash"></i> Hide
+                        </button>
+                        <a href="{{ url_for('main.edit_task_analysis', analysis_id=analysis_id) }}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="{{ url_for('main.download_task_analysis', analysis_id=analysis_id) }}" class="btn btn-sm btn-success">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </div>
+                </div>
+                <div id="task-content" class="analysis-content">
+                    {{ task_analysis | safe }}
+                </div>
+            </div>
+            
+            <div class="navigation-buttons">
+                <a href="{{ url_for('main.audience_analysis', analysis_id=analysis_id) }}" class="btn btn-primary">
+                    <i class="fas fa-users"></i> View Audience Analysis
+                </a>
+                <a href="{{ url_for('main.generate_course_design', analysis_id=analysis_id) }}" class="btn btn-primary proceed-btn">
+                    <i class="fas fa-graduation-cap"></i> Proceed to Course Design
+                </a>
+            </div>
+        </main>
+        
+        <footer>
+            <p>ASID Project - Milestone 1: Input Collection & Analysis</p>
+        </footer>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
