@@ -11,9 +11,11 @@ from docx import Document
 from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 import re
+from difflib import get_close_matches
 import zipfile
 from models.course_materials import CourseMaterialsGenerator, generate_course_materials
 from collections import defaultdict
+import html
 from xml.etree import ElementTree as ET
 from xml.dom import minidom
 from functools import wraps
@@ -247,18 +249,25 @@ def markdown_to_docx(doc, markdown_text):
             p = doc.add_paragraph(line)
         
         current_list = None
+def escape_control_characters(json_str):
+    def replace_control_chars(match):
+        # Get the matched string (content between quotes)
+        content = match.group(0)
+        # Replace \r\n with \\r\\n and \n with \\n
+        content = content.replace('\r\n', '\\r\\n').replace('\n', '\\n')
+        return content
+    
+    # Match string literals (text between double quotes)
+    pattern = r'"[^"]*"'
+    return re.sub(pattern, replace_control_chars, json_str)
 
-@main.route('/test-timeout')
-def test_timeout():
-    # Log start time
-    print(f"Start: {time.ctime()}")
-    time.sleep(45)  # More than 30s
-    print(f"End: {time.ctime()}")
-    return "Completed after 45 seconds"
-
+# Function to unescape control characters in the extracted content
+def unescape_content(content):
+    # Convert literal \r\n and \n to actual control characters
+    return content.encode().decode('unicode_escape')
 
 @main.route('/', methods=['GET', 'POST'])
-@login_required
+# @login_required
 def index():
     form = CourseInputForm()
     if form.validate_on_submit():
@@ -285,18 +294,18 @@ def index():
             }
             save_analysis(analysis_id, analysis_data)
             
-            logged_user = session.get("user")
-            if not logged_user:
-                flash("User session not found.")
-                return redirect(url_for("auth_bp.login"))  # or any fallback
+            # logged_user = session.get("user")
+            # if not logged_user:
+            #     flash("User session not found.")
+            #     return redirect(url_for("auth_bp.login"))  # or any fallback
              
-            email = logged_user["email"]
+            # email = logged_user["email"]
             
-            AnalysisLog.create(
-                useremail= email,
-                analysis_id=analysis_id,
-                data= analysis_data
-            )
+            # AnalysisLog.create(
+            #     useremail= email,
+            #     analysis_id=analysis_id,
+            #     data= analysis_data
+            # )
             
             # Store the ID in session
             session['current_analysis_id'] = analysis_id
@@ -346,10 +355,10 @@ def audience_analysis(analysis_id):
         # Save updated analysis
         save_analysis(analysis_id, analysis_data)
         
-        AnalysisLog.update_by_analysis_id(
-            analysis_id=analysis_id,
-            data=analysis_data
-        )
+        # AnalysisLog.update_by_analysis_id(
+        #     analysis_id=analysis_id,
+        #     data=analysis_data
+        # )
         
         # Redirect to task analysis page
         return redirect(url_for('main.task_analysis', analysis_id=analysis_id))
@@ -1165,6 +1174,10 @@ def edit_material(analysis_id, module_id, material_type):
     # For GET request, show edit form
     if isinstance(material, dict):
         material_content = material.get('raw_content', json.dumps(material, indent=2))
+        # material_content_format = escape_control_characters(material_content)
+        # material_raw = json.loads(material_content_format)
+        # raw_main_content = material_raw['main_content']
+        # print(raw_main_content)
     else:
         material_content = str(material)
     
@@ -1344,7 +1357,7 @@ def download_all_materials(analysis_id):
     
     if not analysis_data or 'course_materials' not in analysis_data:
         flash('Materials not found.')
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.view_materials', analysis_id=analysis_id))
     
     try:
         # Create a ZIP file in memory
@@ -1410,7 +1423,7 @@ def download_all_materials(analysis_id):
                         text_filename = f"{module_folder}/{component_type.replace('_', ' ').title()}.txt"
                         zip_file.writestr(text_filename, text_content)
 
-                       # 3. Clean JSON (structured — parsed from markdown if needed)
+                       # 3. Clean JSON (structured ï¿½ parsed from markdown if needed)
                         component_type = component_type.lower()
 
                         if component_type in ["assessments", "assessment"]:
