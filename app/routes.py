@@ -1376,7 +1376,7 @@ def download_all_materials(analysis_id):
                 scorm_files = {
                     'index_lms.html': os.path.join(current_app.root_path, 'static', 'index_lms.html'),
                     'course.js': os.path.join(current_app.root_path, 'static', 'js', 'course.js'),
-                    'ADLWrapper.js': os.path.join(current_app.root_path, 'static', 'js', 'ADLWrapper.js')
+                    'ADLwrapper.js': os.path.join(current_app.root_path, 'static', 'js', 'ADLwrapper.js')
                 }
                 
                 for arcname, filepath in scorm_files.items():

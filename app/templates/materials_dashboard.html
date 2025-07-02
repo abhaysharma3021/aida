@@ -67,9 +67,9 @@
           <label for="templateSelect" class="form-label fw-bold">Select Template</label>
           <select id="templateSelect" class="form-select">
             <option value="" disabled selected>Select a template</option>
-            <option value="templateA">Template 1</option>
+            <option value="templateA">Learning Platform Template</option>
           </select>
-          <div id="templatepreview" style="margin-top: 10px; display: none;" class="carousel slide" data-ride="carousel">
+	  <div id="templatepreview" style="margin-top: 10px; display: none;" class="carousel slide" data-ride="carousel">
                 <div class="carousel-inner">
                     <div class="carousel-item active">
                     <img src="/static/images/preview1.png" class="d-block w-100" src="..." alt="First slide">
@@ -110,7 +110,7 @@
 
         <!-- Download Button -->
         <!-- <button id="downloadBtn" class="btn btn-success" onclick="downloadSCORM()" disabled>Download</button> -->
-        <span id="downloadWrapper" title="Please select both Template and SCORM Version to enable download.">
+        <div id="downloadWrapper" style="display: flex;" title="Please select both Template and SCORM Version to enable download.">
         <button id="downloadBtn" class="btn btn-success" onclick="downloadSCORM('{{analysis_id}}')" disabled title="Please select both Template and SCORM Version to enable download.">
             Download
         </button>
@@ -496,9 +496,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  function downloadSCORM() {
+  function downloadSCORM(analysis_id) {
     alert("SCORM package download started!");
-    window.location.href = '/download_all_materials/analysis_20250625115337?scorm=2004'; 
+    window.location.href = `/download_all_materials/${analysis_id}?scorm=2004`; 
   }
 
   // ✅ Detect any click, and reset if modal is hidden
