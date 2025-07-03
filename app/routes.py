@@ -267,7 +267,7 @@ def unescape_content(content):
     return content.encode().decode('unicode_escape')
 
 @main.route('/', methods=['GET', 'POST'])
-# @login_required
+@login_required
 def index():
     form = CourseInputForm()
     if form.validate_on_submit():
@@ -294,18 +294,18 @@ def index():
             }
             save_analysis(analysis_id, analysis_data)
             
-            # logged_user = session.get("user")
-            # if not logged_user:
-            #     flash("User session not found.")
-            #     return redirect(url_for("auth_bp.login"))  # or any fallback
+            logged_user = session.get("user")
+            if not logged_user:
+                flash("User session not found.")
+                return redirect(url_for("auth_bp.login"))  # or any fallback
              
-            # email = logged_user["email"]
+            email = logged_user["email"]
             
-            # AnalysisLog.create(
-            #     useremail= email,
-            #     analysis_id=analysis_id,
-            #     data= analysis_data
-            # )
+            AnalysisLog.create(
+                useremail= email,
+                analysis_id=analysis_id,
+                data= analysis_data
+            )
             
             # Store the ID in session
             session['current_analysis_id'] = analysis_id
