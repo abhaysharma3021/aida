@@ -1427,141 +1427,36 @@ def download_all_materials(analysis_id):
                         component_type = component_type.lower()
 
                         if component_type in ["assessments", "assessment"]:
-                           # cleaned_data = parse_full_assessment_json(content)
-                          # structured = parse_full_assessment_json(content)
-                          # cleaned_data = clean_json_structure(structured)
-                           client = GroqClient()
+                            print('assessments')
+                            if 'raw_content' in component_data:
+                                asses_json_output = parse_assessment_to_json(component_data['raw_content'])
+                            elif 'comprehensive_assessments' in component_data:
+                                #asses_json_output = parse_assessment_to_json(component_data['comprehensive_assessments'])
+                                combined_content = (
+                                    component_data.get('comprehensive_assessments', '') + '\n' +
+                                    component_data.get('Practice_questions', '')
+                                )
+                                asses_json_output = parse_assessment_to_json(combined_content)
+ 
+                            else:
+                                asses_json_output = None  # or handle the missing key case appropriately
+ 
                            
-
-                           system_prompt = "You are an expert educational content formatter. Your task is to output only JSON and nothing else. Do not include explanations, Markdown formatting, or comments. Use the following structure exactly with only properties mentioned here: { \"comprehensive_assessments\": { \"knowledge_check_questions\": { \"multiple_choice_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"options\": [\"<Option 1>\", \"<Option 2>\", \"...\"], \"correct_answer\": \"<Correct Answer>\", \"content_reference\": \"<Content Reference>\", \"learning_objective_tested\": \"<Learning Objective>\" }, \"...\" ], \"true_false_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"correct_answer\": <Boolean>, \"content_reference\": \"<Content Reference>\", \"learning_objective_tested\": \"<Learning Objective>\" }, \"...\" ], \"short_answer_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"sample_correct_answer\": \"<Sample Answer>\", \"key_points_required\": [\"<Key Point 1>\", \"<Key Point 2>\", \"...\"], \"content_reference\": \"<Content Reference>\", \"learning_objective_tested\": \"<Learning Objective>\" }, \"...\" ] }, \"application_questions\": { \"scenario_based_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"sample_correct_answer\": \"<Sample Answer>\", \"assessment_rubric\": { \"excellent\": { \"score\": <Score>, \"description\": \"<Description>\" }, \"good\": { \"score\": <Score>, \"description\": \"<Description>\" }, \"satisfactory\": { \"score\": <Score>, \"description\": \"<Description>\" }, \"needs_improvement\": { \"score\": <Score>, \"description\": \"<Description>\" } }, \"content_connection\": \"<Content Connection>\" }, \"...\" ], \"problem_solving_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"step_by_step_solution\": [\"<Step 1>\", \"<Step 2>\", \"...\"], \"common_mistakes\": [\"<Mistake 1>\", \"<Mistake 2>\", \"...\"], \"full_credit_answer\": \"<Full Credit Answer>\" }, \"...\" ] }, \"analysis_and_synthesis_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"sample_answer\": \"<Sample Answer>\", \"grading_criteria\": [\"<Criterion 1>\", \"<Criterion 2>\", \"...\"], \"content_references\": [\"<Reference 1>\", \"<Reference 2>\", \"...\"] }, \"...\" ], \"practical_assessment_project\": { \"project_description\": \"<Project Description>\", \"project_requirements\": [\"<Requirement 1>\", \"<Requirement 2>\", \"...\"], \"deliverables\": [\"<Deliverable 1>\", \"<Deliverable 2>\", \"...\"], \"grading_rubric\": { \"concept_application\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" }, \"technical_accuracy\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" }, \"completeness\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" }, \"quality_of_explanation\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" }, \"innovation_creativity\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" } } }, \"self_assessment_tools\": { \"knowledge_self_check\": [ { \"question\": \"<Question Text>\", \"scale\": \"<Scale>\" }, \"...\" ], \"skills_self_assessment\": [ { \"question\": \"<Question Text>\", \"options\": [\"<Option 1>\", \"<Option 2>\", \"...\"] }, \"...\" ] }, \"answer_keys_and_explanations\": { \"note\": \"<Note>\" } }, \"practice_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"options\": [\"<Option 1>\", \"<Option 2>\", \"...\"], \"answer\": \"<Answer>\", \"content_reference\": \"<Content Reference>\", \"study_tip\": \"<Study Tip>\" }, \"...\" ], \"assessment_overview\": { \"total_questions\": \"<Total Questions>\", \"question_types\": [\"<Type 1>\", \"<Type 2>\", \"...\"], \"assessment_features\": [\"<Feature 1>\", \"<Feature 2>\", \"...\"], \"estimated_assessment_time\": \"<Estimated Time>\" } }"
-                           
-                           raw_response = client.generate(content, system_prompt)
-                           # Step 1: Strip the outer single quotes (if present)
-                           raw_response = raw_response.strip("'")
-                          
-                           parsed_json = json.loads(raw_response)
-                           
-                           cleaned_data = parsed_json
-                           clean_json_filename = f"{filename}.clean.json"
-                           clean_json_content = json.dumps(cleaned_data, indent=2)
-                           zip_file.writestr(clean_json_filename, clean_json_content)
+                            cleaned_data = asses_json_output
                         
-                        # elif component_type in ["activities", "activity"]:
-                            
-                        #      var_parsed_json = json.loads(content)
-                        #      client = GroqClient()
-                        #      system_prompt = "You are an expert educational content formatter. Your task is to output only JSON and nothing else. Do not include explanations, Markdown formatting, or comments. Use the following structure exactly with only properties mentioned here: { \"comprehensive_activities\": { \"category_<number>\": { \"name\": \"<Category Name>\", \"activity\": { \"name\": \"<Activity Name>\", \"type\": \"<Activity Type>\", \"duration\": \"<Duration>\", \"purpose\": \"<Purpose>\", \"materials\": [\"<Material 1>\", \"<Material 2>\", \"...\"], \"process\": [ { \"step\": <Step Number>, \"description\": \"<Step Description>\", \"duration\": \"<Step Duration>\" }, \"...\" ], \"assessment\": \"<Assessment Method>\", \"technology\": [\"<Technology 1>\", \"<Technology 2>\", \"...\"], \"extensions\": [\"<Extension 1>\", \"<Extension 2>\", \"...\"], \"differentiation\": \"<Differentiation Description>\", \"detailed_implementation_guide\": { \"pre_activity_setup\": \"<Setup Description>\", \"step_by_step_facilitation\": [\"<Facilitation Step 1>\", \"<Facilitation Step 2>\", \"...\"], \"timing\": \"<Total Timing>\", \"materials_checklist\": [\"<Checklist Item 1>\", \"<Checklist Item 2>\", \"...\"], \"technology_requirements\": \"<Technology Requirements>\", \"assessment_methods\": [\"<Assessment Method 1>\", \"<Assessment Method 2>\", \"...\"], \"troubleshooting_tips\": [\"<Tip 1>\", \"<Tip 2>\", \"...\"], \"variations_and_extensions\": [\"<Variation/Extension 1>\", \"<Variation/Extension 2>\", \"...\"] }, \"differentiation_options\": { \"advanced_learner_challenges\": [\"<Challenge 1>\", \"<Challenge 2>\", \"...\"], \"support_for_struggling_learners\": [\"<Support 1>\", \"<Support 2>\", \"...\"], \"cultural_adaptations\": [\"<Adaptation 1>\", \"<Adaptation 2>\", \"...\"] }, \"integration_with_content\": { \"specific_concepts_reinforced\": \"<Concepts>\", \"learning_objectives_addressed\": \"<Objectives>\", \"connection_to_other_activities\": \"<Connections>\", \"assessment_alignment\": \"<Assessment Alignment>\" } } }, \"...\" }, \"activity_overview\": { \"total_activities\": \"<Total Activities>\", \"categories\": [\"<Category 1>\", \"<Category 2>\", \"...\"], \"estimated_total_time\": \"<Total Time>\", \"recommended_usage\": \"<Usage Recommendation>\" }, \"metadata\": { \"module_number\": <Module Number>, \"module_title\": \"<Module Title>\", \"generated_date\": \"<Generated Date>\", \"detail_level\": \"<Detail Level>\", \"activity_complexity\": \"<Complexity Level>\" } }"
 
-                        #      raw_response = client.generate(content, system_prompt)
+                        elif component_type == "content":
+                            print('content')
+                            json_output = parse_content_to_json_contenttype(component_data['main_content'])
+                            cleaned_data = json_output
 
-                        #      # Step 1: Strip outer single quotes if present
-                        #      if raw_response.startswith("'") and raw_response.endswith("'"):
-                        #         raw_response = raw_response[1:-1]
-
-                        #      # Step 2: Remove Markdown code block markers if present
-                        #      if raw_response.startswith("```json") or raw_response.startswith("```"):
-                        #         raw_response = re.sub(r"^```json\s*|```$", "", raw_response).strip()
-
-                        #      # Step 3: Try unicode_escape decoding
-                        #      try:
-                        #         clean_str = raw_response.encode().decode('unicode_escape')
-                        #      except Exception as e:
-                        #         print("Unicode decode issue:", e)
-                        #         clean_str = raw_response  # fallback to raw
-
-                        #      # Step 4: Convert to dictionary
-                        #      try:
-                        #         cleaned_data = json.loads(clean_str)
-                        #         print("Successfully parsed JSON")
-                        #      except json.JSONDecodeError as e:
-                        #         print("JSON Decode Error:", e)
-                        #         cleaned_data = {}
-
-                        if component_type == "content":
-                            # var_parsed_json = json.loads(content)
-                            # var_markdown_text = var_parsed_json.get("main_content", "")
-
-                            # output_json = parse_markdown_to_scorm_object(var_markdown_text)
-                            # print(output_json)
-
-                            # # Step 4: Clean the chapter data using your existing clean_json_structure function
-                            # cleaned_data = clean_json_structure(output_json)
-                            var_parsed_json = json.loads(content)
-                            var_markdown_text = var_parsed_json.get("main_content", "")
-
-                            # Initialize Groq client
-                            # groq = Groq(model_name="meta-llama/llama-4-scout-17b-16e-instruct")
-                            client = GroqClient()
-
-                            # System prompt to enforce structure
-                            
-                            system_prompt = "You are an expert educational content formatter. Your task is to output only JSON and nothing else. Do not include explanations, Markdown formatting, or comments. Use the following structure exactly with only properties mentioned here: {\"chapter\": {\"title\": \"\", \"learningOutcomes\": [], \"overview\": \"\", \"introduction\": \"\", \"topics\": [{\"title\": \"\", \"overview\": \"\", \"coreConcepts\": {\"definition\": \"\", \"theoreticalFoundation\": \"\", \"keyComponents\": []}, \"examples\": [{\"level\": \"\", \"steps\": []}], \"practicalApplications\": \"\", \"challengesAndSolutions\": [{\"challenge\": \"\", \"solution\": \"\"}], \"bestPractices\": []}], \"synthesis\": \"\", \"implementationGuide\": [], \"toolsAndResources\": {\"essentialTools\": [], \"additionalResources\": {\"recommendedReadings\": [], \"onlineTutorials\": [], \"practicePlatforms\": [], \"professionalCommunities\": []}}, \"summary\": \"\", \"glossary\": [{\"term\": \"\", \"definition\": \"\"}]}}}"
-
-                           
-
-                            # Call Groq to get structured response
-                            print("Sending chapter markdown to Groq for parsing...")
-                            
-                            raw_response = client.generate(var_markdown_text, system_prompt)
-                          
-                            parsed_raw = json.loads(raw_response)
-
-                            # Step 2: Extract the relevant part directly (no Markdown conversion needed)
-                            chapter_data = parsed_raw.get('chapter', {})                           
-
-                            # Step 4: Clean the chapter data using your existing clean_json_structure function
-                            #cleaned_data = clean_json_structure(chapter_data)
-                            
-                            output_json = {'chapter': chapter_data}
-
-                            # Step 4: Clean the chapter data using your existing clean_json_structure function
-                            cleaned_data = clean_json_structure(output_json)
-                            clean_json_filename = f"{filename}.clean.json"
-                            clean_json_content = json.dumps(cleaned_data, indent=2)
-                            zip_file.writestr(clean_json_filename, clean_json_content)
-                            
-    
-                           
-                        # elif component_type in ["lesson_plan"]:
-                        #     client = GroqClient()
-                        #     system_prompt = "You are an expert educational content formatter. Your task is to output only JSON and nothing else. Do not include explanations, Markdown formatting, or comments. Use the following structure exactly with only properties mentioned here: { \"comprehensive_lesson_plan\": { \"session_overview\": { \"duration\": \"<Duration>\", \"format\": \"<Format>\", \"materials\": [\"<Material 1>\", \"<Material 2>\", \"...\"] }, \"pre_session_preparation\": { \"duration\": \"<Duration>\", \"instructor_preparation\": [\"<Task 1>\", \"<Task 2>\", \"...\"], \"student_preparation\": { \"pre_reading_assignments\": \"<Assignments>\", \"prerequisite_knowledge_check\": \"<Knowledge Check>\", \"preparation_materials_to_review\": \"<Materials>\" } }, \"detailed_session_structure\": { \"opening_phase\": { \"duration\": \"<Duration>\", \"welcome_and_objectives\": { \"duration\": \"<Duration>\", \"tasks\": [\"<Task 1>\", \"<Task 2>\", \"...\"] }, \"engagement_hook\": { \"duration\": \"<Duration>\", \"tasks\": [\"<Task 1>\", \"<Task 2>\", \"...\"] }, \"knowledge_activation\": { \"duration\": \"<Duration>\", \"tasks\": [\"<Task 1>\", \"<Task 2>\", \"...\"] } }, \"core_content_delivery\": { \"duration\": \"<Duration>\", \"segment_1_foundational_concepts\": { \"duration\": \"<Duration>\", \"content_delivery_method\": \"<Method>\", \"interactive_elements\": [\"<Element 1>\", \"<Element 2>\", \"...\"], \"visual_aids_and_demonstrations\": \"<Aids>\", \"check_for_understanding\": \"<Check Method>\", \"q_a_opportunities\": \"<QA Method>\" }, \"break_1\": { \"duration\": \"<Duration>\" }, \"segment_2_advanced_applications\": { \"duration\": \"<Duration>\", \"activities\": [\"<Activity 1>\", \"<Activity 2>\", \"...\"] }, \"break_2\": { \"duration\": \"<Duration>\" }, \"segment_3_practical_implementation\": { \"duration\": \"<Duration>\", \"activities\": [\"<Activity 1>\", \"<Activity 2>\", \"...\"] } }, \"integration_and_assessment\": { \"duration\": \"<Duration>\", \"synthesis_activities\": { \"duration\": \"<Duration>\", \"tasks\": [\"<Task 1>\", \"<Task 2>\", \"...\"] }, \"formative_assessment\": { \"duration\": \"<Duration>\", \"tasks\": [\"<Task 1>\", \"<Task 2>\", \"...\"] }, \"wrap_up_and_preview\": { \"duration\": \"<Duration>\", \"tasks\": [\"<Task 1>\", \"<Task 2>\", \"...\"] } } }, \"instructional_strategies_for_each_phase\": { \"content_delivery_techniques\": [\"<Technique 1>\", \"<Technique 2>\", \"...\"], \"engagement_strategies\": [\"<Strategy 1>\", \"<Strategy 2>\", \"...\"] }, \"assessment_integration\": { \"continuous_assessment\": [\"<Method 1>\", \"<Method 2>\", \"...\"], \"culminating_assessment\": [\"<Method 1>\", \"<Method 2>\", \"...\"] }, \"differentiation_strategies\": { \"for_advanced_learners\": [\"<Strategy 1>\", \"<Strategy 2>\", \"...\"], \"for_struggling_learners\": [\"<Strategy 1>\", \"<Strategy 2>\", \"...\"] }, \"technology_integration\": [\"<Tool 1>\", \"<Tool 2>\", \"...\"], \"materials_and_resources_needed\": { \"essential_materials\": [\"<Material 1>\", \"<Material 2>\", \"...\"], \"optional_enhancements\": [\"<Enhancement 1>\", \"<Enhancement 2>\", \"...\"] }, \"timing_flexibility\": { \"extended_format\": { \"duration\": \"<Duration>\", \"description\": \"<Description>\" }, \"split_format\": { \"duration\": \"<Duration>\", \"description\": \"<Description>\" }, \"compressed_format\": { \"duration\": \"<Duration>\", \"description\": \"<Description>\" } }, \"follow_up_activities\": [\"<Activity 1>\", \"<Activity 2>\", \"...\"], \"example_lesson_plan_execution\": { \"welcome_and_objectives\": { \"duration\": \"<Duration>\", \"tasks\": [\"<Task 1>\", \"<Task 2>\", \"...\"] }, \"segment_1_foundational_concepts\": { \"duration\": \"<Duration>\", \"tasks\": [\"<Task 1>\", \"<Task 2>\", \"...\"] }, \"break_1\": { \"duration\": \"<Duration>\" }, \"segment_2_advanced_applications\": { \"duration\": \"<Duration>\", \"tasks\": [\"<Task 1>\", \"<Task 2>\", \"...\"] }, \"break_2\": { \"duration\": \"<Duration>\" }, \"segment_3_practical_implementation\": { \"duration\": \"<Duration>\", \"tasks\": [\"<Task 1>\", \"<Task 2>\", \"...\"] }, \"integration_and_assessment\": { \"duration\": \"<Duration>\", \"tasks\": [\"<Task 1>\", \"<Task 2>\", \"...\"] } } } }"
-
-                        #     print("Sending lesson markdown to Groq for parsing...")
-                            
-                        #     raw_response = client.generate(content, system_prompt)
-                        #     # Step 1: Strip the outer single quotes (if present)
-                        #     raw_response = raw_response.strip("'")
-
-                        #     # Step 2: Parse the escaped JSON string into a dictionary
-                        #     parsed_json = json.loads(raw_response)
-
-                        #     # Step 3: Now parsed_json is your actual JSON structure
-                        #     cleaned_data = parsed_json
+                        else:
+                            cleaned_data = component_data  # fallback: use raw JSON if unknown type
                             
 
-
-
-                        # elif component_type in ["instructor_guide"]:
-                        #     # cleaned_data = parse_full_section_json(content)
-                        #     #
-                        #     client = GroqClient()
-                        #     system_prompt = "You are an expert educational content formatter. Your task is to output only JSON and nothing else. Do not include explanations, Markdown formatting, or comments. Use the following structure exactly with only properties mentioned here: { \"comprehensive_instructor_guide\": { \"module_overview_for_instructors\": { \"content_scope_and_depth\": { \"estimated_content_volume\": \"<Content Volume>\", \"reading_time\": \"<Reading Time>\", \"teaching_time\": \"<Teaching Time>\", \"complexity_level\": \"<Complexity Level>\", \"prerequisites\": [\"<Prerequisite 1>\", \"<Prerequisite 2>\", \"...\"] }, \"key_teaching_challenges\": [\"<Challenge 1>\", \"<Challenge 2>\", \"...\"] }, \"pre_instruction_preparation\": { \"duration\": \"<Duration>\", \"content_mastery_preparation\": { \"deep_content_review\": { \"duration\": \"<Duration>\", \"tasks\": [\"<Task 1>\", \"<Task 2>\", \"...\"] }, \"instructional_planning\": { \"duration\": \"<Duration>\", \"tasks\": [\"<Task 1>\", \"<Task 2>\", \"...\"] }, \"material_and_technology_setup\": { \"duration\": \"<Duration>\", \"tasks\": [\"<Task 1>\", \"<Task 2>\", \"...\"] } } }, \"content_delivery_strategies\": { \"chunking_strategy_for_extensive_content\": [ { \"chunk\": \"<Chunk Name>\", \"duration\": \"<Duration>\", \"content_focus\": \"<Content Focus>\", \"delivery_method\": \"<Delivery Method>\", \"engagement\": \"<Engagement Strategy>\", \"assessment\": \"<Assessment Method>\", \"transition\": \"<Transition Strategy>\" }, \"...\" ], \"engagement_maintenance_strategies\": { \"every_10_15_minutes\": [\"<Strategy 1>\", \"<Strategy 2>\", \"...\"], \"every_30_45_minutes\": [\"<Strategy 1>\", \"<Strategy 2>\", \"...\"], \"every_60_90_minutes\": [\"<Strategy 1>\", \"<Strategy 2>\", \"...\"] } }, \"assessment_integration_and_management\": { \"real_time_assessment_strategies\": [ { \"method\": \"<Method Name>\", \"description\": \"<Description>\" }, \"...\" ], \"assessment_data_management\": [\"<Method 1>\", \"<Method 2>\", \"...\"] }, \"technology_integration_guide\": { \"essential_technology_tools\": [ { \"tool\": \"<Tool Name>\", \"description\": \"<Description>\" }, \"...\" ], \"technology_troubleshooting\": [\"<Troubleshooting Strategy 1>\", \"<Troubleshooting Strategy 2>\", \"...\"] }, \"student_support_strategies\": { \"for_overwhelmed_students\": [\"<Strategy 1>\", \"<Strategy 2>\", \"...\"], \"for_advanced_students\": [\"<Strategy 1>\", \"<Strategy 2>\", \"...\"], \"for_struggling_students\": [\"<Strategy 1>\", \"<Strategy 2>\", \"...\"] }, \"quality_assurance_checklist\": { \"before_each_session\": [\"<Checklist Item 1>\", \"<Checklist Item 2>\", \"...\"], \"during_each_session\": [\"<Checklist Item 1>\", \"<Checklist Item 2>\", \"...\"], \"after_each_session\": [\"<Checklist Item 1>\", \"<Checklist Item 2>\", \"...\"] }, \"assessment_answer_keys_and_guidance\": { \"using_real_assessment_questions\": { \"how_to_integrate_content_based_questions_during_instruction\": [\"<Strategy 1>\", \"<Strategy 2>\", \"...\"], \"techniques_for_creating_spontaneous_questions_from_content\": [\"<Technique 1>\", \"<Technique 2>\", \"...\"], \"methods_for_checking_student_understanding_of_specific_concepts\": [\"<Method 1>\", \"<Method 2>\", \"...\"], \"strategies_for_providing_immediate_feedback_on_content_mastery\": [\"<Strategy 1>\", \"<Strategy 2>\", \"...\"] }, \"grading_comprehensive_assessments\": { \"guidelines_for_evaluating_content_based_responses\": [\"<Guideline 1>\", \"<Guideline 2>\", \"...\"], \"rubrics_for_application_and_analysis_questions\": [\"<Rubric 1>\", \"<Rubric 2>\", \"...\"], \"methods_for_providing_meaningful_feedback\": [\"<Method 1>\", \"<Method 2>\", \"...\"], \"strategies_for_identifying_and_addressing_knowledge_gaps\": [\"<Strategy 1>\", \"<Strategy 2>\", \"...\"] } }, \"implementation_roadmap\": { \"week_session_planning\": [ { \"session\": <Session Number>, \"description\": \"<Description>\" }, \"...\" ], \"session_template\": [ { \"section\": \"<Section Name>\", \"duration\": \"<Duration>\", \"description\": \"<Description>\" }, \"...\" ], \"instructor_tips\": [\"<Tip 1>\", \"<Tip 2>\", \"...\"] }, \"conclusion\": \"<Conclusion Text>\" }, \"guide_overview\": { \"preparation_time\": \"<Preparation Time>\", \"delivery_time\": \"<Delivery Time>\", \"key_features\": [\"<Feature 1>\", \"<Feature 2>\", \"...\"], \"support_level\": \"<Support Level>\" } }"
-                            
-                        #     print("Sending instructorGuide markdown to Groq for parsing...")
-                            
-                        #     raw_response = client.generate(content, system_prompt)
-                        #     # Step 1: Strip the outer single quotes (if present)
-                        #     raw_response = raw_response.strip("'")
-
-                        #     # Step 2: Parse the escaped JSON string into a dictionary
-                        #     parsed_json = json.loads(raw_response)
-
-                        #     # Step 3: Now parsed_json is your actual JSON structure
-                        #     cleaned_data = parsed_json
-                            
-
-                        # else:
-                        #     cleaned_data = component_data  # fallback: use raw JSON if unknown type
+                        clean_json_filename = f"{filename}.clean.json"
+                        clean_json_content = json.dumps(cleaned_data, indent=2)
+                        zip_file.writestr(clean_json_filename, clean_json_content)
 
 
         # Prepare for download
@@ -1578,6 +1473,493 @@ def download_all_materials(analysis_id):
         logger.error(f"Error creating materials ZIP: {str(e)}")
         flash('Error creating download file.')
         return redirect(url_for('main.view_materials', analysis_id=analysis_id))
+
+
+def parse_assessment_to_json(assessmentRaw_text):
+    # Define section assessmentHeadings for the assessment
+    assessmentHeadings = [
+        "Comprehensive Assessment Suite", "Knowledge Check Questions",
+        "Multiple Choice Questions", "True/False Questions",
+        "Short Answer Questions", "Application Questions",
+        "Scenario-Based Questions", "Analysis and Synthesis Questions",
+        "Practical Assessment Project",
+        "Self-Assessment Tools","Answer Keys and Explanations","Practice Questions for"
+    ]
+
+    def asmt_clean_line(line):
+        cleaned = re.sub(r'^#+\s*', '', line)
+        cleaned = re.sub(r'^[-*+]\s+', '', cleaned)
+        cleaned = re.sub(r'^\d+\.\s+', '', cleaned)
+        cleaned = re.sub(r'\*\*|__|\*|_', '', cleaned)
+        cleaned = re.sub(r'`+', '', cleaned)
+        cleaned = re.sub(r':\s*$', '', cleaned)
+        cleaned = re.sub(r'\t', ' ', cleaned)
+        return cleaned.strip()
+    
+    asmt_raw_lines = [line.strip() for line in assessmentRaw_text.split('\n') if line.strip()]
+    asmt_cleaned_lines = [asmt_clean_line(line) for line in asmt_raw_lines]
+
+    asmt_parsed_data = {}
+    asmt_current_heading = None
+    asmt_lowercase_headings = [h.lower() for h in assessmentHeadings]
+
+    # for line in asmt_cleaned_lines:
+    #     if line.lower() in asmt_lowercase_headings:
+    #         asmt_matching_heading = next(h for h in assessmentHeadings
+    #                                 if h.lower() == line.lower())
+    #         asmt_current_heading = asmt_matching_heading
+    #         if asmt_current_heading not in asmt_parsed_data:
+    #             asmt_parsed_data[asmt_current_heading] = []
+    #     elif asmt_current_heading:
+    #         asmt_parsed_data[asmt_current_heading].append(line)
+
+    # for line in asmt_cleaned_lines:
+    #     if any(line.lower().startswith(h.lower()) for h in assessmentHeadings if h == "Practice Questions for") or line.lower() in asmt_lowercase_headings:
+    #         matching_heading = next(h for h in assessmentHeadings if line.lower().startswith(h.lower())) if "Practice Questions for" in assessmentHeadings and line.lower().startswith("practice questions for") else next(h for h in assessmentHeadings if h.lower() == line.lower())
+    #         asmt_current_heading = matching_heading
+    #         if asmt_current_heading not in asmt_parsed_data:
+    #             asmt_parsed_data[asmt_current_heading] = []
+    #     elif asmt_current_heading:
+    #         asmt_parsed_data[asmt_current_heading].append(line)
+    for line in asmt_cleaned_lines:
+        # Check if the line starts with or contains a heading (ignoring parenthetical content)
+        matching_heading = None
+        for h in assessmentHeadings:
+            h_lower = h.lower()
+            # Remove parenthetical content for comparison
+            asmt_cleaned_lines = re.sub(r'\s*\([^)]*\)', '', line.lower()).strip()
+            if asmt_cleaned_lines == h_lower or (h == "Practice Questions for" and line.lower().startswith(h_lower)):
+                matching_heading = h
+                break
+        if matching_heading:
+            asmt_current_heading = matching_heading
+            if asmt_current_heading not in asmt_parsed_data:
+                asmt_parsed_data[asmt_current_heading] = []
+        elif asmt_current_heading:
+            asmt_parsed_data[asmt_current_heading].append(line)
+           
+
+    asmt_standard_json = {
+        "comprehensive_assessments": {
+            "knowledge_check_questions": {
+                "multiple_choice_questions": [],
+                "true_false_questions": [],
+                "short_answer_questions": []
+            },
+            "application_questions": {
+                "scenario_based_questions": []
+            },
+            "analysis_and_synthesis_questions": [],
+            "practical_assessment_project": {
+                "project_description": "",
+                "project_requirements": [],
+                "deliverables": [],
+                "grading_rubric": {}
+            },
+            "self_assessment_tools": {
+                "knowledge_self_check": [],
+                "skills_self_assessment": []
+            },
+            #"answer_keys_and_explanations": [],
+            "practice_questions": []
+        },
+        "assessment_overview": {
+            "total_questions": "",
+            "question_types": [],
+            "assessment_features": [],
+            "estimated_assessment_time": ""
+        }
+    }
+
+    def process_multiple_choice(lines):
+        questions = []
+        current_question = {}
+        current_options = []
+        expect_question_text = False
+        for line in lines:
+            line = asmt_clean_line(line)
+            if line.startswith("Question"):
+                if current_question:
+                    current_question["options"] = current_options
+                    questions.append(current_question)
+                    current_options = []
+                    current_question = {}
+                expect_question_text = True
+                current_question = {
+                    "question_number": len(questions) + 1,
+                    "question": "",
+                    "options": [],
+                    "correct_answer": "",
+                    "content_reference": "",
+                    "learning_objective_tested": ""
+                }
+            elif expect_question_text and line and not line.startswith(("a)", "b)", "c)", "d)", "Correct Answer:", "Content Reference:", "Learning Objective Tested:")):
+                current_question["question"] = line.strip()
+                expect_question_text = False
+            elif line.startswith(("a)", "b)", "c)", "d)")):
+                current_options.append(line)
+            elif line.startswith("Correct Answer:"):
+                current_question["correct_answer"] = line.split(":", 1)[1].strip()
+            elif line.startswith("Content Reference:"):
+                current_question["content_reference"] = line.split(":", 1)[1].strip()
+            elif line.startswith("Learning Objective Tested:"):
+                current_question["learning_objective_tested"] = line.split(":", 1)[1].strip()
+        if current_question:
+            current_question["options"] = current_options
+            questions.append(current_question)
+        return questions
+
+    def process_true_false(lines):
+        questions = []
+        current_question = {}
+        for line in lines:
+            line = asmt_clean_line(line)
+            if line.startswith("Question"):
+                if current_question:
+                    questions.append(current_question)
+                    current_question = {}
+                expect_question_text = True
+                current_question = {
+                    "question_number": len(questions) + 1,
+                    "question": "",
+                    "correct_answer": False,
+                    "content_reference": "",
+                    "learning_objective_tested": ""
+                }
+            elif expect_question_text and line and not line.startswith(("Correct Answer:","Content Reference:", "Learning Objective Tested:")):
+                if line.startswith("True or") or line.startswith("true or"):
+                    currentquestion = line.split(":", 1)[1].strip()
+                    current_question["question"] = currentquestion
+                    expect_question_text = False
+            elif line.startswith("Correct Answer:"):
+                answer = line.split(":", 1)[1].strip()
+                current_question["correct_answer"] = answer.lower().startswith(
+                    "true")
+            elif line.startswith("Content Reference:"):
+                current_question["content_reference"] = line.split(
+                    ":", 1)[1].strip()
+            elif line.startswith("Learning Objective Tested:"):
+                current_question["learning_objective_tested"] = line.split(
+                    ":", 1)[1].strip()
+        if current_question:
+            questions.append(current_question)
+        return questions
+
+    def process_short_answer(lines):
+        questions = []
+        current_question = {}
+        key_points = []
+        for line in lines:
+            line = asmt_clean_line(line)
+            if line.startswith("Question"):
+                if current_question:
+                    current_question["key_points_required"] = key_points
+                    questions.append(current_question)
+                    key_points = []
+                    current_question = {}
+                expect_question_text = True
+                current_question = {
+                    "question_number": len(questions) + 1,
+                    "question": "",
+                    "sample_correct_answer": "",
+                    "key_points_required": [],
+                    "content_reference": "",
+                    "learning_objective_tested": ""
+                }
+
+            elif expect_question_text and line and not line.startswith(("Sample Correct Answer:", "Key Points Required:","Content Reference:","Learning Objective Tested:")):
+                current_question["question"] = line.strip()
+                expect_question_text = False    
+            elif line.startswith("Sample Correct Answer:"):
+                current_question["sample_correct_answer"] = line.split(
+                    ":", 1)[1].strip()
+            elif line.startswith("Key Points Required:"):
+                key_points = line.split(":", 1)[1].strip().split(", ")
+            elif line.startswith("Content Reference:"):
+                current_question["content_reference"] = line.split(
+                    ":", 1)[1].strip()
+            elif line.startswith("Learning Objective Tested:"):
+                current_question["learning_objective_tested"] = line.split(
+                    ":", 1)[1].strip()
+        if current_question:
+            current_question["key_points_required"] = key_points
+            questions.append(current_question)
+        return questions
+
+    def process_scenario_based(lines):
+        questions = []
+        current_question = {}
+        rubric = {}
+        for line in lines:
+            line = asmt_clean_line(line)
+            if line.startswith("Question"):
+                if current_question:
+                    current_question["assessment_rubric"] = rubric
+                    questions.append(current_question)
+                    rubric = {}
+                    current_question = {}
+                expect_question_text = True
+                current_question = {
+                    "question_number": len(questions) + 1,
+                    "question": "",
+                    "sample_correct_answer": "",
+                    "assessment_rubric": {},
+                    "content_connection": ""
+                }
+            elif expect_question_text and line and not line.startswith(("Question","Sample Correct Answer",
+                                 "Assessment Rubric",
+                                 "Excellent", "Good", "Satisfactory", "Needs Improvement","Content Connection")):
+                current_question["question"] = line.strip()
+                expect_question_text = False 
+
+            elif line.startswith("Sample Correct Answer:"):
+                current_question["sample_correct_answer"] = line.split(
+                    ":", 1)[1].strip()
+            elif line.startswith("Assessment Rubric:"):
+                continue
+            elif line.startswith(
+                ("Excellent", "Good", "Satisfactory", "Needs Improvement")):
+                score = 4 if line.startswith(
+                    "Excellent") else 3 if line.startswith(
+                        "Good") else 2 if line.startswith(
+                            "Satisfactory") else 1
+                description = line.split("(", 1)[0].strip()
+                rubric[description.lower()] = {
+                    "score": score,
+                    "description": line.split(":", 1)[1].strip()
+                }
+            elif line.startswith("Content Connection:"):
+                current_question["content_connection"] = line.split(
+                    ":", 1)[1].strip()
+        if current_question:
+            current_question["assessment_rubric"] = rubric
+            questions.append(current_question)
+        return questions
+
+    def process_analysis_synthesis(lines):
+        questions = []
+        current_question = {}
+        grading_criteria = []
+        for line in lines:
+            line = asmt_clean_line(line)
+            if line.startswith("Question"):
+                if current_question:
+                    current_question["grading_criteria"] = grading_criteria
+                    questions.append(current_question)
+                    grading_criteria = []
+                    current_question = {}
+                expect_question_text = True
+                current_question = {
+                    "question_number": len(questions) + 1,
+                    "question": "",
+                    "sample_answer": "",
+                    "grading_criteria": [],
+                    "content_references": ""
+                }
+
+            elif expect_question_text and line and not line.startswith(("Question","Sample Answer",
+                                 "Grading Criteria",
+                                 "Content References")):
+                current_question["question"] = line.strip()
+                expect_question_text = False 
+
+            elif line.startswith("Sample Answer:"):
+                current_question["sample_answer"] = line.split(":",
+                                                               1)[1].strip()
+            elif line.startswith("Grading Criteria:"):
+                grading_criteria = line.split(":", 1)[1].strip().split(", ")
+            elif line.startswith("Content References:"):
+                current_question["content_references"] = line.split(
+                    ":", 1)[1].strip()
+        if current_question:
+            current_question["grading_criteria"] = grading_criteria
+            questions.append(current_question)
+        return questions
+
+    def process_practical_project(lines):
+        project = {
+            "project_description": "",
+            "project_requirements": [],
+            "deliverables": [],
+            "grading_rubric": {}
+        }
+        current_section = None
+        requirements = []
+        deliverables = []
+        rubric = {}
+        subheadings = ["Project Description", "Project Requirements", "Deliverables", "Grading Rubric"]
+        lowercase_subheadings = [h.lower() for h in subheadings]
+
+        for line in lines:
+            line = asmt_clean_line(line)
+            if line.lower() in lowercase_subheadings:
+                current_section = next(h for h in subheadings if h.lower() == line.lower()).lower().replace(" ", "_")
+            elif current_section and line:
+                if current_section == "project_description":
+                    project["project_description"] = line
+                elif current_section == "project_requirements":
+                    requirements.append(line)
+                elif current_section == "deliverables":
+                    deliverables.append(line)
+                elif current_section == "grading_rubric":
+                    try:
+                        key = line.split("(", 1)[0].strip().lower().replace(" ", "_")
+                        weight = int(line.split("(", 1)[1].split("%")[0])
+                        description = line.split(":", 1)[1].strip()
+                        rubric[key] = {"weight": weight, "description": description}
+                    except (IndexError, ValueError) as e:
+                        print(f"Error processing grading rubric line '{line}': {str(e)}")
+
+        project["project_requirements"] = requirements
+        project["deliverables"] = deliverables
+        project["grading_rubric"] = rubric
+        return project
+
+    def process_self_assessment(lines):
+        self_assessment = {
+            "knowledge_self_check": [],
+            "skills_self_assessment": []
+        }
+        current_section = None
+        subheadings = ["Knowledge Self-Check", "Skills Self-Assessment"]
+        lowercase_subheadings = [h.lower() for h in subheadings]
+
+        for line in lines:
+            line = asmt_clean_line(line)
+            if line.lower() in lowercase_subheadings:
+                current_section = next(h for h in subheadings if h.lower() == line.lower()).lower().replace(" ", "_")
+            elif current_section and line:
+                if current_section == "knowledge_self-check":
+                 scale = "1-5" if "(1-5)" in line else ""
+                 question_text = line.split("(1-5)")[0].strip() if "(1-5)" in line else line
+                 self_assessment["knowledge_self_check"].append({"question": question_text, "scale": scale})
+                elif current_section == "skills_self-assessment":
+                 options = ["Yes", "No", "Partially"] if "Yes/No/Partially" in line else []
+                 question_text = line.split("(Yes/No/Partially)")[0].strip() if "(Yes/No/Partially)" in line else line
+                 self_assessment["skills_self_assessment"].append({"question": question_text, "options": options})
+
+        return self_assessment
+
+    # def process_answer_keys(lines):
+    #     answer_keys = []
+    #     current_question = {}
+    #     common_wrong_answers = []
+    #     for line in lines:
+    #         line = asmt_clean_line(line)
+    #         if line.startswith("Question"):
+    #             if current_question:
+    #                 current_question[
+    #                     "common_wrong_answers"] = common_wrong_answers
+    #                 answer_keys.append(current_question)
+    #                 common_wrong_answers = []
+    #                 current_question = {}
+    #             question_text = line.split(
+    #                 ":", 1)[1].strip() if ":" in line else line.replace(
+    #                     "Question", "").strip()
+    #             current_question = {
+    #                 "question": question_text,
+    #                 "correct_answer": "",
+    #                 "explanation": "",
+    #                 "common_wrong_answers": [],
+    #                 "content_reference": "",
+    #                 "tips": ""
+    #             }
+    #         elif line.startswith("Correct Answer:"):
+    #             current_question["correct_answer"] = line.split(":",
+    #                                                             1)[1].strip()
+    #         elif line.startswith("Explanation:"):
+    #             current_question["explanation"] = line.split(":", 1)[1].strip()
+    #         elif line.startswith("Content Reference:"):
+    #             current_question["content_reference"] = line.split(
+    #                 ":", 1)[1].strip()
+    #         elif line.startswith("Common Wrong Answers:"):
+    #             common_wrong_answers = [
+    #                 ans.strip() for ans in line.split(":", 1)[1].split(", ")
+    #             ] if ":" in line else []
+    #         elif line.startswith("Tips:"):
+    #             current_question["tips"] = line.split(":", 1)[1].strip()
+    #     if current_question:
+    #         current_question["common_wrong_answers"] = common_wrong_answers
+    #         answer_keys.append(current_question)
+    #     return answer_keys
+    
+    def process_practice_questions(lines):
+        questions = []
+        current_question = {}
+        current_options = []
+        expect_question_text = False
+        for line in lines:
+            line = asmt_clean_line(line)
+            if line.startswith("Practice Question"):
+                if current_question:
+                    current_question["options"] = current_options
+                    questions.append(current_question)
+                    current_options = []
+                    current_question = {}
+                expect_question_text = True
+                current_question = {
+                    "question_number": len(questions) + 1,
+                    "question": "",
+                    "options": [],
+                    "answer": "",
+                    "content_reference": "",
+                    "study_tip": ""
+                }
+            elif expect_question_text and line and not line.startswith(("A)", "B)", "C)", "D)", "Answer:", "Content Reference:", "Study Tip:")):
+                current_question["question"] = line.strip()
+                expect_question_text = False
+            elif line.startswith(("A)", "B)", "C)", "D)")):
+                current_options.append(line[2:].strip())
+            elif line.startswith("Answer:"):
+                current_question["answer"] = line.split(":", 1)[1].strip()
+            elif line.startswith("Content Reference:"):
+                current_question["content_reference"] = line.split(":", 1)[1].strip()
+            elif line.startswith("Study Tip:"):
+                current_question["study_tip"] = line.split(":", 1)[1].strip()
+        if current_question:
+            current_question["options"] = current_options
+            questions.append(current_question)
+        return questions
+
+    for key, value in asmt_parsed_data.items():
+        if key == "Multiple Choice Questions":
+         asmt_standard_json["comprehensive_assessments"][
+             "knowledge_check_questions"][
+                 "multiple_choice_questions"] = process_multiple_choice(value)
+
+        elif key == "True/False Questions":
+            asmt_standard_json["comprehensive_assessments"][
+                "knowledge_check_questions"][
+                    "true_false_questions"] = process_true_false(value)
+        elif key == "Short Answer Questions":
+            asmt_standard_json["comprehensive_assessments"][
+                "knowledge_check_questions"][
+                    "short_answer_questions"] = process_short_answer(value)
+        elif key == "Scenario-Based Questions":
+            asmt_standard_json["comprehensive_assessments"][
+                "application_questions"][
+                    "scenario_based_questions"] = process_scenario_based(value)
+        elif key == "Analysis and Synthesis Questions":
+            asmt_standard_json["comprehensive_assessments"][
+                "analysis_and_synthesis_questions"] = process_analysis_synthesis(
+                    value)
+        elif key == "Practical Assessment Project":
+            asmt_standard_json["comprehensive_assessments"][
+                "practical_assessment_project"] = process_practical_project(
+                    value)
+        elif key == "Self-Assessment Tools":
+            asmt_standard_json["comprehensive_assessments"][
+                "self_assessment_tools"] = process_self_assessment(value)
+            
+        elif key.startswith("Practice Questions for"):
+            asmt_standard_json["comprehensive_assessments"]["practice_questions"] = process_practice_questions(value)
+        
+        # elif key == "Answer Keys and Explanations":
+        #     asmt_standard_json["comprehensive_assessments"][
+        #         "answer_keys_and_explanations"] = process_answer_keys(value)
+
+    return asmt_standard_json
+
 
 
 def create_combined_navigation(course_materials):
@@ -1823,6 +2205,394 @@ def format_material_as_text(material_type, material_data):
     text += json.dumps(data, indent=2)
     
     return text
+
+def parse_content_to_json_contenttype(md_text):
+    rawtext = md_text
+
+    headings = [
+        "Chapter", "Learning Outcomes", "Chapter Overview", "Introduction",
+        "Detailed Topic Coverage", "Synthesis and Integration",
+        "Practical Implementation Guide", "Tools and Resources", "Essential Tools",
+        "Additional Resources", "Recommended Readings", "Online tutorials",
+        "Practice platforms", "Professional communities", "Chapter Summary",
+        "Key Terms Glossary"
+    ]
+
+    topic_headings = [
+        "Comprehensive Overview", "Core Concepts", "Definition", "Theoretical Foundation",
+        "Key Components", "How It Works", "Detailed Examples", "Practical Applications",
+        "Common Challenges and Solutions", "Best Practices", "Integration with Other Concepts"
+    ]
+
+    def clean_line(line):
+        cleaned = re.sub(r'^#+\s*', '', line)
+        cleaned = re.sub(r'^[-*+]\s+', '', cleaned)
+        cleaned = re.sub(r'^\d+\.\s+', '', cleaned)
+        cleaned = re.sub(r'\*\*|__|\*|_', '', cleaned)
+        cleaned = re.sub(r'`+', '', cleaned)
+        cleaned = re.sub(r':\s*$', '', cleaned)
+        cleaned = re.sub(r'\t', ' ', cleaned)
+        cleaned = re.sub(r'JAVAHOME', 'JAVA_HOME', cleaned)
+        return cleaned.strip()
+
+    def process_examples_lines(example_key, lines, current_topic):
+        detailed_examples = []
+        current_level = None
+        current_steps = []
+        for line in lines:
+            line = line.strip()
+            if line.startswith("Example"):
+                if current_level:
+                    detailed_examples.append({
+                        "level": current_level,
+                        "steps": [step for step in current_steps if step]
+                    })
+                    current_steps = []
+                current_level = line.split(":", 1)[1].strip() if ":" in line else line.strip()
+            elif current_level and line:
+                current_steps.append(line)
+        if current_level:
+            detailed_examples.append({
+                "level": current_level,
+                "steps": [step for step in current_steps if step]
+            })
+        current_topic["Detailed Examples"] = detailed_examples
+        return current_topic
+
+    def process_challenge_lines(challenge_key, lines, current_topic):
+        challenges_solutions = []
+        current_challenge = None
+        current_steps = []
+        is_pattern_2 = False
+        for i, line in enumerate(lines):
+            line = line.strip()
+            if "Challenge" in line:
+                if current_challenge:
+                    if is_pattern_2:
+                        if current_steps and "Solution" in current_steps[0]:
+                            solution = current_steps[0].split(":", 1)[1].strip() if ":" in current_steps[0] else current_steps[0].strip()
+                            challenges_solutions.append({
+                                "challenge": current_challenge,
+                                "solution": solution
+                            })
+                    else:
+                        challenges_solutions.append({
+                            "challenge": current_challenge,
+                            "solution": [step for step in current_steps if step]
+                        })
+                    current_steps = []
+                challenge_part = line.split(":", 1)[1].strip() if ":" in line else line.strip()
+                current_challenge = challenge_part.rstrip("-").strip()
+                if i + 1 < len(lines) and "Solution" in lines[i + 1].strip():
+                    is_pattern_2 = True
+                else:
+                    is_pattern_2 = False
+            elif current_challenge and line:
+                current_steps.append(line)
+        if current_challenge:
+            if is_pattern_2:
+                if current_steps and "Solution" in current_steps[0]:
+                    solution = current_steps[0].split(":", 1)[1].strip() if ":" in current_steps[0] else current_steps[0].strip()
+                    challenges_solutions.append({
+                        "challenge": current_challenge,
+                        "solution": solution
+                    })
+            else:
+                challenges_solutions.append({
+                    "challenge": current_challenge,
+                    "solution": [step for step in current_steps if step]
+                })
+        current_topic["Common Challenges and Solutions"] = challenges_solutions
+        return current_topic
+
+    def restructure_challenges(current_topic):
+        challenges_solutions = current_topic["Common Challenges and Solutions"]
+        restructured = []
+        for challenge in challenges_solutions:
+            if any("Description:" in item for item in challenge["solution"]):
+                description = ""
+                solution = ""
+                for item in challenge["solution"]:
+                    if "Description:" in item:
+                        description = item.split(":", 1)[1].strip()
+                    elif "Solution:" in item:
+                        solution = item.split(":", 1)[1].strip()
+                restructured.append({
+                    "challenge": description or challenge["challenge"],
+                    "solution": solution
+                })
+            else:
+                restructured.append({
+                    "challenge": challenge["challenge"],
+                    "solution": challenge["solution"]
+                })
+        current_topic["Common Challenges and Solutions"] = restructured
+        return current_topic
+
+    def process_topic_coverage(topic_key, lines, standard_json):
+        topics = []
+        current_topic = {
+            "Topic Title": "",
+            "Comprehensive Overview": "",
+            "Core Concepts": {
+                "Definition": "",
+                "Theoretical Foundation": "",
+                "Key Components": [],
+                "How It Works": []
+            },
+            "Detailed Examples": [],
+            "Practical Applications": "",
+            "Common Challenges and Solutions": [],
+            "Best Practices": [],
+            "Integration with Other Concepts": ""
+        }
+        current_subsection = None
+        current_lines = []
+        topic_title = None
+        lowercase_topic_headings = [h.lower() for h in topic_headings]
+        for line in lines:
+            line = line.strip()
+            if re.match(r'^[A-Z]\.\s*+.+$', line):
+                if topic_title:
+                    if current_subsection:
+                        if current_subsection == "Comprehensive Overview":
+                            joined = '\n'.join([l for l in current_lines if l])
+                            current_topic["Comprehensive Overview"] = joined.split('\n') if '\n' in joined else joined
+                        elif current_subsection == "Definition":
+                            joined = '\n'.join([l for l in current_lines if l])
+                            current_topic["Core Concepts"]["Definition"] = joined.split('\n') if '\n' in joined else joined
+                        elif current_subsection == "Theoretical Foundation":
+                            joined = '\n'.join([l for l in current_lines if l])
+                            current_topic["Core Concepts"]["Theoretical Foundation"] = joined.split('\n') if '\n' in joined else joined
+                        elif current_subsection == "Key Components":
+                            current_topic["Core Concepts"]["Key Components"] = [l for l in current_lines if l]
+                        elif current_subsection == "How It Works":
+                            current_topic["Core Concepts"]["How It Works"] = [l for l in current_lines if l]
+                        elif current_subsection == "Detailed Examples":
+                            current_topic = process_examples_lines(current_subsection, current_lines, current_topic)
+                        elif current_subsection == "Practical Applications":
+                            joined = '\n'.join([l for l in current_lines if l])
+                            current_topic["Practical Applications"] = joined.split('\n') if '\n' in joined else joined
+                        elif current_subsection == "Common Challenges and Solutions":
+                            current_topic = process_challenge_lines(current_subsection, current_lines, current_topic)
+                            current_topic = restructure_challenges(current_topic)
+                        elif current_subsection == "Best Practices":
+                            current_topic["Best Practices"] = [l for l in current_lines if l]
+                        elif current_subsection == "Integration with Other Concepts":
+                            joined = '\n'.join([l for l in current_lines if l])
+                            current_topic["Integration with Other Concepts"] = joined.split('\n') if '\n' in joined else joined
+                    current_topic["Topic Title"] = topic_title
+                    topics.append(current_topic)
+                    current_topic = {
+                        "Topic Title": "",
+                        "Comprehensive Overview": "",
+                        "Core Concepts": {
+                            "Definition": "",
+                            "Theoretical Foundation": "",
+                            "Key Components": [],
+                            "How It Works": []
+                        },
+                        "Detailed Examples": [],
+                        "Practical Applications": "",
+                        "Common Challenges and Solutions": [],
+                        "Best Practices": [],
+                        "Integration with Other Concepts": ""
+                    }
+                    current_subsection = None
+                    current_lines = []
+                topic_title = line
+            elif line.lower() in lowercase_topic_headings:
+                matching_heading = next(h for h in topic_headings if h.lower() == line.lower())
+                if current_subsection:
+                    if current_subsection == "Comprehensive Overview":
+                        joined = '\n'.join([l for l in current_lines if l])
+                        current_topic["Comprehensive Overview"] = joined.split('\n') if '\n' in joined else joined
+                    elif current_subsection == "Definition":
+                        joined = '\n'.join([l for l in current_lines if l])
+                        current_topic["Core Concepts"]["Definition"] = joined.split('\n') if '\n' in joined else joined
+                    elif current_subsection == "Theoretical Foundation":
+                        joined = '\n'.join([l for l in current_lines if l])
+                        current_topic["Core Concepts"]["Theoretical Foundation"] = joined.split('\n') if '\n' in joined else joined
+                    elif current_subsection == "Key Components":
+                        current_topic["Core Concepts"]["Key Components"] = [l for l in current_lines if l]
+                    elif current_subsection == "How It Works":
+                        current_topic["Core Concepts"]["How It Works"] = [l for l in current_lines if l]
+                    elif current_subsection == "Detailed Examples":
+                        current_topic = process_examples_lines(current_subsection, current_lines, current_topic)
+                    elif current_subsection == "Practical Applications":
+                        joined = '\n'.join([l for l in current_lines if l])
+                        current_topic["Practical Applications"] = joined.split('\n') if '\n' in joined else joined
+                    elif current_subsection == "Common Challenges and Solutions":
+                        current_topic = process_challenge_lines(current_subsection, current_lines, current_topic)
+                        current_topic = restructure_challenges(current_topic)
+                    elif current_subsection == "Best Practices":
+                        current_topic["Best Practices"] = [l for l in current_lines if l]
+                    elif current_subsection == "Integration with Other Concepts":
+                        joined = '\n'.join([l for l in current_lines if l])
+                        current_topic["Integration with Other Concepts"] = joined.split('\n') if '\n' in joined else joined
+                current_subsection = matching_heading
+                current_lines = []
+            elif current_subsection and line:
+                current_lines.append(line)
+        if topic_title:
+            if current_subsection:
+                if current_subsection == "Comprehensive Overview":
+                    joined = '\n'.join([l for l in current_lines if l])
+                    current_topic["Comprehensive Overview"] = joined.split('\n') if '\n' in joined else joined
+                elif current_subsection == "Definition":
+                    joined = '\n'.join([l for l in current_lines if l])
+                    current_topic["Core Concepts"]["Definition"] = joined.split('\n') if '\n' in joined else joined
+                elif current_subsection == "Theoretical Foundation":
+                    joined = '\n'.join([l for l in current_lines if l])
+                    current_topic["Core Concepts"]["Theoretical Foundation"] = joined.split('\n') if '\n' in joined else joined
+                elif current_subsection == "Key Components":
+                    current_topic["Core Concepts"]["Key Components"] = [l for l in current_lines if l]
+                elif current_subsection == "How It Works":
+                    current_topic["Core Concepts"]["How It Works"] = [l for l in current_lines if l]
+                elif current_subsection == "Detailed Examples":
+                    current_topic = process_examples_lines(current_subsection, current_lines, current_topic)
+                elif current_subsection == "Practical Applications":
+                    joined = '\n'.join([l for l in current_lines if l])
+                    current_topic["Practical Applications"] = joined.split('\n') if '\n' in joined else joined
+                elif current_subsection == "Common Challenges and Solutions":
+                    current_topic = process_challenge_lines(current_subsection, current_lines, current_topic)
+                    current_topic = restructure_challenges(current_topic)
+                elif current_subsection == "Best Practices":
+                    current_topic["Best Practices"] = [l for l in current_lines if l]
+                elif current_subsection == "Integration with Other Concepts":
+                    joined = '\n'.join([l for l in current_lines if l])
+                    current_topic["Integration with Other Concepts"] = joined.split('\n') if '\n' in joined else joined
+            current_topic["Topic Title"] = topic_title
+            topics.append(current_topic)
+        standard_json["chapter"]["Detailed Topic Coverage"] = topics
+        return standard_json
+
+    def process_glossary_lines(lines):
+        glossary = []
+        for line in lines:
+            line = clean_line(line)
+            if ":" in line:
+                term, definition = line.split(":", 1)
+                glossary.append({
+                    "term": term.strip(),
+                    "definition": definition.strip()
+                })
+        return glossary
+
+    raw_lines = [line.strip() for line in rawtext.split('\n') if line.strip()]
+    cleaned_lines = [clean_line(line) for line in raw_lines]
+
+    parsed_data = {}
+    current_heading = None
+    lowercase_headings = [h.lower() for h in headings]
+
+    for line in cleaned_lines:
+        cleaned = clean_line(line)
+        if cleaned.lower() in lowercase_headings:
+            matching_heading = next(h for h in headings if h.lower() == cleaned.lower())
+            current_heading = matching_heading
+            if current_heading not in parsed_data:
+                parsed_data[current_heading] = []
+        elif current_heading:
+            parsed_data[current_heading].append(cleaned)
+
+    standard_json = {
+        "chapter": {
+            "Chapter": "{}",
+            "Learning Outcomes": "",
+            "Chapter Overview": "",
+            "Introduction": "",
+            "Detailed Topic Coverage": [],
+            "Synthesis and Integration": "",
+            "Practical Implementation Guide": "",
+            "Tools and Resources": {
+                "Essential Tools": "",
+                "Additional Resources": {
+                    "Recommended Readings": "",
+                    "Online tutorials": "",
+                    "Practice platforms": "",
+                    "Professional communities": ""
+                }
+            },
+            "Chapter Summary": "",
+            "Key Terms Glossary": []
+        }
+    }
+
+    if cleaned_lines:
+        standard_json["chapter"]['Chapter'] = cleaned_lines[0].split(':', 1)[1].strip() if ':' in cleaned_lines[0] else cleaned_lines[0]
+
+    for key, value in parsed_data.items():
+        joined_value = '\n'.join(value)
+        final_value = joined_value.split('\n') if '\n' in joined_value else joined_value
+        matching_key = next(h for h in headings if h.lower() == key.lower())
+        if matching_key == "Learning Outcomes":
+            standard_json["chapter"][matching_key] = final_value
+        elif matching_key == "Practical Implementation Guide":
+            standard_json["chapter"][matching_key] = final_value
+        elif matching_key == "Chapter":
+            standard_json["chapter"][matching_key] = final_value
+        elif matching_key == "Essential Tools":
+            standard_json["chapter"]["Tools and Resources"][matching_key] = final_value
+        elif matching_key in ["Recommended Readings", "Online tutorials", "Practice platforms", "Professional communities"]:
+            standard_json["chapter"]["Tools and Resources"]["Additional Resources"][matching_key] = final_value
+        elif matching_key == "Detailed Topic Coverage":
+            standard_json = process_topic_coverage(matching_key, value, standard_json)
+        elif matching_key == "Key Terms Glossary":
+            standard_json["chapter"][matching_key] = process_glossary_lines(value)
+        elif matching_key in standard_json["chapter"] and not isinstance(standard_json["chapter"][matching_key], (dict, list)):
+            standard_json["chapter"][matching_key] = final_value
+
+    
+    # return standard_json
+    updated_json = update_standard_json(standard_json)
+    return updated_json
+
+
+def update_standard_json(standard_json):
+    key_mapping = {
+        "Chapter": "title",
+        "Learning Outcomes": "learningOutcomes",
+        "Chapter Overview": "overview",
+        "Introduction": "introduction",
+        "Detailed Topic Coverage": "topics",
+        "Topic Title": "title",
+        "Comprehensive Overview": "overview",
+        "Core Concepts": "coreConcepts",
+        "Definition": "definition",
+        "Theoretical Foundation": "theoreticalFoundation",
+        "Key Components": "keyComponents",
+        "How It Works": "howitWorks",
+        "Detailed Examples": "examples",
+        "Practical Applications": "practicalApplications",
+        "Common Challenges and Solutions": "challengesAndSolutions",
+        "Best Practices": "bestPractices",
+        "Synthesis and Integration": "synthesis",
+        "Practical Implementation Guide": "implementationGuide",
+        "Tools and Resources": "toolsAndResources",
+        "Essential Tools": "essentialTools",
+        "Additional Resources": "additionalResources",
+        "Recommended Readings": "recommendedReadings",
+        "Online tutorials": "onlineTutorials",
+        "Practice platforms": "practicePlatforms",
+        "Professional communities": "professionalCommunities",
+        "Chapter Summary": "summary",
+        "Key Terms Glossary": "glossary"
+    }
+
+    return rename_keys(standard_json, key_mapping)
+
+def rename_keys(obj, key_mapping):
+    if isinstance(obj, dict):
+        new_obj = {}
+        for k, v in obj.items():
+            new_key = key_mapping.get(k, k)
+            new_obj[new_key] = rename_keys(v, key_mapping)
+        return new_obj
+    elif isinstance(obj, list):
+        return [rename_keys(item, key_mapping) for item in obj]
+    else:
+        return obj
 
 @main.route('/download_module_materials/<analysis_id>/<int:module_id>')
 def download_module_materials(analysis_id, module_id):
