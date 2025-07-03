@@ -267,7 +267,7 @@ def unescape_content(content):
     return content.encode().decode('unicode_escape')
 
 @main.route('/', methods=['GET', 'POST'])
-@login_required
+# @login_required
 def index():
     form = CourseInputForm()
     if form.validate_on_submit():
@@ -294,18 +294,18 @@ def index():
             }
             save_analysis(analysis_id, analysis_data)
             
-            logged_user = session.get("user")
-            if not logged_user:
-                flash("User session not found.")
-                return redirect(url_for("auth_bp.login"))  # or any fallback
+            # logged_user = session.get("user")
+            # if not logged_user:
+            #     flash("User session not found.")
+            #     return redirect(url_for("auth_bp.login"))  # or any fallback
              
-            email = logged_user["email"]
+            # email = logged_user["email"]
             
-            AnalysisLog.create(
-                useremail= email,
-                analysis_id=analysis_id,
-                data= analysis_data
-            )
+            # AnalysisLog.create(
+            #     useremail= email,
+            #     analysis_id=analysis_id,
+            #     data= analysis_data
+            # )
             
             # Store the ID in session
             session['current_analysis_id'] = analysis_id
@@ -1427,36 +1427,79 @@ def download_all_materials(analysis_id):
                         component_type = component_type.lower()
 
                         if component_type in ["assessments", "assessment"]:
-                            print('assessments')
-                            if 'raw_content' in component_data:
-                                asses_json_output = parse_assessment_to_json(component_data['raw_content'])
-                            elif 'comprehensive_assessments' in component_data:
-                                #asses_json_output = parse_assessment_to_json(component_data['comprehensive_assessments'])
-                                combined_content = (
-                                    component_data.get('comprehensive_assessments', '') + '\n' +
-                                    component_data.get('Practice_questions', '')
-                                )
-                                asses_json_output = parse_assessment_to_json(combined_content)
+                            # print('assessments')
+                            # if 'raw_content' in component_data:
+                            #     asses_json_output = parse_assessment_to_json(component_data['raw_content'])
+                            # elif 'comprehensive_assessments' in component_data:
+                            #     #asses_json_output = parse_assessment_to_json(component_data['comprehensive_assessments'])
+                            #     combined_content = (
+                            #         component_data.get('comprehensive_assessments', '') + '\n' +
+                            #         component_data.get('Practice_questions', '')
+                            #     )
+                            #     asses_json_output = parse_assessment_to_json(combined_content)
  
-                            else:
-                                asses_json_output = None  # or handle the missing key case appropriately
+                            # else:
+                            #     asses_json_output = None  # or handle the missing key case appropriately
  
                            
-                            cleaned_data = asses_json_output
+                            # cleaned_data = asses_json_output
+                            client = GroqClient()
+                           
+
+                            system_prompt = "You are an expert educational content formatter. Your task is to output only JSON and nothing else. Do not include explanations, Markdown formatting, or comments. Use the following structure exactly with only properties mentioned here: { \"comprehensive_assessments\": { \"knowledge_check_questions\": { \"multiple_choice_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"options\": [\"<Option 1>\", \"<Option 2>\", \"...\"], \"correct_answer\": \"<Correct Answer>\", \"content_reference\": \"<Content Reference>\", \"learning_objective_tested\": \"<Learning Objective>\" }, \"...\" ], \"true_false_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"correct_answer\": <Boolean>, \"content_reference\": \"<Content Reference>\", \"learning_objective_tested\": \"<Learning Objective>\" }, \"...\" ], \"short_answer_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"sample_correct_answer\": \"<Sample Answer>\", \"key_points_required\": [\"<Key Point 1>\", \"<Key Point 2>\", \"...\"], \"content_reference\": \"<Content Reference>\", \"learning_objective_tested\": \"<Learning Objective>\" }, \"...\" ] }, \"application_questions\": { \"scenario_based_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"sample_correct_answer\": \"<Sample Answer>\", \"assessment_rubric\": { \"excellent\": { \"score\": <Score>, \"description\": \"<Description>\" }, \"good\": { \"score\": <Score>, \"description\": \"<Description>\" }, \"satisfactory\": { \"score\": <Score>, \"description\": \"<Description>\" }, \"needs_improvement\": { \"score\": <Score>, \"description\": \"<Description>\" } }, \"content_connection\": \"<Content Connection>\" }, \"...\" ], \"problem_solving_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"step_by_step_solution\": [\"<Step 1>\", \"<Step 2>\", \"...\"], \"common_mistakes\": [\"<Mistake 1>\", \"<Mistake 2>\", \"...\"], \"full_credit_answer\": \"<Full Credit Answer>\" }, \"...\" ] }, \"analysis_and_synthesis_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"sample_answer\": \"<Sample Answer>\", \"grading_criteria\": [\"<Criterion 1>\", \"<Criterion 2>\", \"...\"], \"content_references\": [\"<Reference 1>\", \"<Reference 2>\", \"...\"] }, \"...\" ], \"practical_assessment_project\": { \"project_description\": \"<Project Description>\", \"project_requirements\": [\"<Requirement 1>\", \"<Requirement 2>\", \"...\"], \"deliverables\": [\"<Deliverable 1>\", \"<Deliverable 2>\", \"...\"], \"grading_rubric\": { \"concept_application\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" }, \"technical_accuracy\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" }, \"completeness\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" }, \"quality_of_explanation\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" }, \"innovation_creativity\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" } } }, \"self_assessment_tools\": { \"knowledge_self_check\": [ { \"question\": \"<Question Text>\", \"scale\": \"<Scale>\" }, \"...\" ], \"skills_self_assessment\": [ { \"question\": \"<Question Text>\", \"options\": [\"<Option 1>\", \"<Option 2>\", \"...\"] }, \"...\" ] }, \"answer_keys_and_explanations\": { \"note\": \"<Note>\" } }, \"practice_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"options\": [\"<Option 1>\", \"<Option 2>\", \"...\"], \"answer\": \"<Answer>\", \"content_reference\": \"<Content Reference>\", \"study_tip\": \"<Study Tip>\" }, \"...\" ], \"assessment_overview\": { \"total_questions\": \"<Total Questions>\", \"question_types\": [\"<Type 1>\", \"<Type 2>\", \"...\"], \"assessment_features\": [\"<Feature 1>\", \"<Feature 2>\", \"...\"], \"estimated_assessment_time\": \"<Estimated Time>\" } }"
+                           
+                            raw_response = client.generate(content, system_prompt)
+                            # Step 1: Strip the outer single quotes (if present)
+                            raw_response = raw_response.strip("'")
+                          
+                            parsed_json = json.loads(raw_response)
+                           
+                            cleaned_data = parsed_json
+                            clean_json_filename = f"{filename}.clean.json"
+                            clean_json_content = json.dumps(cleaned_data, indent=2)
+                            zip_file.writestr(clean_json_filename, clean_json_content)
                         
 
                         elif component_type == "content":
-                            print('content')
-                            json_output = parse_content_to_json_contenttype(component_data['main_content'])
-                            cleaned_data = json_output
+                            # print('content')
+                            # json_output = parse_content_to_json_contenttype(component_data['main_content'])
+                            # cleaned_data = json_output
+                            var_parsed_json = json.loads(content)
+                            var_markdown_text = var_parsed_json.get("main_content", "")
+                            client = GroqClient()
+                            system_prompt = "You are an expert educational content formatter. Your task is to output only JSON and nothing else. Do not include explanations, Markdown formatting, or comments. Use the following structure exactly with only properties mentioned here: {\"chapter\": {\"title\": \"\", \"learningOutcomes\": [], \"overview\": \"\", \"introduction\": \"\", \"topics\": [{\"title\": \"\", \"overview\": \"\", \"coreConcepts\": {\"definition\": \"\", \"theoreticalFoundation\": \"\", \"keyComponents\": []}, \"examples\": [{\"level\": \"\", \"steps\": []}], \"practicalApplications\": \"\", \"challengesAndSolutions\": [{\"challenge\": \"\", \"solution\": \"\"}], \"bestPractices\": []}], \"synthesis\": \"\", \"implementationGuide\": [], \"toolsAndResources\": {\"essentialTools\": [], \"additionalResources\": {\"recommendedReadings\": [], \"onlineTutorials\": [], \"practicePlatforms\": [], \"professionalCommunities\": []}}, \"summary\": \"\", \"glossary\": [{\"term\": \"\", \"definition\": \"\"}]}}}"
 
-                        else:
-                            cleaned_data = component_data  # fallback: use raw JSON if unknown type
+                           
+
+                            # Call Groq to get structured response
+                            print("Sending chapter markdown to Groq for parsing...")
+                            
+                            raw_response = client.generate(var_markdown_text, system_prompt)
+                          
+                            parsed_raw = json.loads(raw_response)
+
+                            # Step 2: Extract the relevant part directly (no Markdown conversion needed)
+                            chapter_data = parsed_raw.get('chapter', {})                           
+
+                            # Step 4: Clean the chapter data using your existing clean_json_structure function
+                            #cleaned_data = clean_json_structure(chapter_data)
+                            
+                            output_json = {'chapter': chapter_data}
+
+                            # Step 4: Clean the chapter data using your existing clean_json_structure function
+                            cleaned_data = clean_json_structure(output_json)
+                            clean_json_filename = f"{filename}.clean.json"
+                            clean_json_content = json.dumps(cleaned_data, indent=2)
+                            zip_file.writestr(clean_json_filename, clean_json_content)
+
+
+                        # else:
+                        #     cleaned_data = component_data  # fallback: use raw JSON if unknown type
                             
 
-                        clean_json_filename = f"{filename}.clean.json"
-                        clean_json_content = json.dumps(cleaned_data, indent=2)
-                        zip_file.writestr(clean_json_filename, clean_json_content)
+                        # clean_json_filename = f"{filename}.clean.json"
+                        # clean_json_content = json.dumps(cleaned_data, indent=2)
+                        # zip_file.writestr(clean_json_filename, clean_json_content)
 
 
         # Prepare for download
