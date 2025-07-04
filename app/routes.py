@@ -267,7 +267,7 @@ def unescape_content(content):
     return content.encode().decode('unicode_escape')
 
 @main.route('/', methods=['GET', 'POST'])
-# @login_required
+@login_required
 def index():
     form = CourseInputForm()
     if form.validate_on_submit():
@@ -294,18 +294,18 @@ def index():
             }
             save_analysis(analysis_id, analysis_data)
             
-            # logged_user = session.get("user")
-            # if not logged_user:
-            #     flash("User session not found.")
-            #     return redirect(url_for("auth_bp.login"))  # or any fallback
+            logged_user = session.get("user")
+            if not logged_user:
+                flash("User session not found.")
+                return redirect(url_for("auth_bp.login"))  # or any fallback
              
-            # email = logged_user["email"]
+            email = logged_user["email"]
             
-            # AnalysisLog.create(
-            #     useremail= email,
-            #     analysis_id=analysis_id,
-            #     data= analysis_data
-            # )
+            AnalysisLog.create(
+                useremail= email,
+                analysis_id=analysis_id,
+                data= analysis_data
+            )
             
             # Store the ID in session
             session['current_analysis_id'] = analysis_id
@@ -1444,8 +1444,7 @@ def download_all_materials(analysis_id):
                            
                             # cleaned_data = asses_json_output
                             client = GroqClient()
-                           
-
+                            print("Generating assessments from AI")
                             system_prompt = "You are an expert educational content formatter. Your task is to output only JSON and nothing else. Do not include explanations, Markdown formatting, or comments. Use the following structure exactly with only properties mentioned here: { \"comprehensive_assessments\": { \"knowledge_check_questions\": { \"multiple_choice_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"options\": [\"<Option 1>\", \"<Option 2>\", \"...\"], \"correct_answer\": \"<Correct Answer>\", \"content_reference\": \"<Content Reference>\", \"learning_objective_tested\": \"<Learning Objective>\" }, \"...\" ], \"true_false_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"correct_answer\": <Boolean>, \"content_reference\": \"<Content Reference>\", \"learning_objective_tested\": \"<Learning Objective>\" }, \"...\" ], \"short_answer_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"sample_correct_answer\": \"<Sample Answer>\", \"key_points_required\": [\"<Key Point 1>\", \"<Key Point 2>\", \"...\"], \"content_reference\": \"<Content Reference>\", \"learning_objective_tested\": \"<Learning Objective>\" }, \"...\" ] }, \"application_questions\": { \"scenario_based_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"sample_correct_answer\": \"<Sample Answer>\", \"assessment_rubric\": { \"excellent\": { \"score\": <Score>, \"description\": \"<Description>\" }, \"good\": { \"score\": <Score>, \"description\": \"<Description>\" }, \"satisfactory\": { \"score\": <Score>, \"description\": \"<Description>\" }, \"needs_improvement\": { \"score\": <Score>, \"description\": \"<Description>\" } }, \"content_connection\": \"<Content Connection>\" }, \"...\" ], \"problem_solving_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"step_by_step_solution\": [\"<Step 1>\", \"<Step 2>\", \"...\"], \"common_mistakes\": [\"<Mistake 1>\", \"<Mistake 2>\", \"...\"], \"full_credit_answer\": \"<Full Credit Answer>\" }, \"...\" ] }, \"analysis_and_synthesis_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"sample_answer\": \"<Sample Answer>\", \"grading_criteria\": [\"<Criterion 1>\", \"<Criterion 2>\", \"...\"], \"content_references\": [\"<Reference 1>\", \"<Reference 2>\", \"...\"] }, \"...\" ], \"practical_assessment_project\": { \"project_description\": \"<Project Description>\", \"project_requirements\": [\"<Requirement 1>\", \"<Requirement 2>\", \"...\"], \"deliverables\": [\"<Deliverable 1>\", \"<Deliverable 2>\", \"...\"], \"grading_rubric\": { \"concept_application\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" }, \"technical_accuracy\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" }, \"completeness\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" }, \"quality_of_explanation\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" }, \"innovation_creativity\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" } } }, \"self_assessment_tools\": { \"knowledge_self_check\": [ { \"question\": \"<Question Text>\", \"scale\": \"<Scale>\" }, \"...\" ], \"skills_self_assessment\": [ { \"question\": \"<Question Text>\", \"options\": [\"<Option 1>\", \"<Option 2>\", \"...\"] }, \"...\" ] }, \"answer_keys_and_explanations\": { \"note\": \"<Note>\" } }, \"practice_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"options\": [\"<Option 1>\", \"<Option 2>\", \"...\"], \"answer\": \"<Answer>\", \"content_reference\": \"<Content Reference>\", \"study_tip\": \"<Study Tip>\" }, \"...\" ], \"assessment_overview\": { \"total_questions\": \"<Total Questions>\", \"question_types\": [\"<Type 1>\", \"<Type 2>\", \"...\"], \"assessment_features\": [\"<Feature 1>\", \"<Feature 2>\", \"...\"], \"estimated_assessment_time\": \"<Estimated Time>\" } }"
                            
                             raw_response = client.generate(content, system_prompt)
