@@ -39,9 +39,13 @@
                         <i class="fas fa-file-pdf"></i> Export as PDF
                     </a></li>
                     <li>
-                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#scormModal">
+                    <!-- <a class="dropdown-item" href="#" data-toggle="modal" data-target="#scormModal">
+                        <i class="fas fa-file-archive"></i> Export to SCORM
+                    </a> -->
+                    <a class="dropdown-item" href="#" onclick="openScormModal()">
                         <i class="fas fa-file-archive"></i> Export to SCORM
                     </a>
+
                     </li>
                 </ul>
             </div>
@@ -53,9 +57,12 @@
 
       <div class="modal-header">
         <h5 class="modal-title">Download SCORM Package</h5>
-        <button type="button" class="close fw-bold fs-5 border-0 bg-transparent" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close fw-bold fs-5 border-0 bg-transparent" onclick="closeScormModal()" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
+        
+
+        
       </div>
 
       <div class="modal-body text-center">
@@ -68,6 +75,7 @@
           <select id="templateSelect" class="form-select">
             <option value="" disabled selected>Select a template</option>
             <option value="templateA">Learning Platform Template</option>
+            <option value="templateB" disabled>Teacher Platform Template</option>
           </select>
 	  <div id="templatepreview" style="margin-top: 10px; display: none;" class="carousel slide" data-ride="carousel">
                 <div class="carousel-inner">
@@ -110,7 +118,7 @@
 
         <!-- Download Button -->
         <!-- <button id="downloadBtn" class="btn btn-success" onclick="downloadSCORM()" disabled>Download</button> -->
-        <div id="downloadWrapper" style="display: flex;" title="Please select both Template and SCORM Version to enable download.">
+        <div id="downloadWrapper" style="display: flex;width: fit-content" title="Please select both Template and SCORM Version to enable download.">
         <button id="downloadBtn" class="btn btn-success" onclick="downloadSCORM('{{analysis_id}}')" disabled title="Please select both Template and SCORM Version to enable download.">
             Download
         </button>
@@ -497,26 +505,34 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  
+
+    function openScormModal() {
+    // Clean up any previous modal state if needed
+    const $modal = $('#scormModal');
+
+    // This ensures the modal will open cleanly every time
+    $modal.removeClass('show').css('display', '').attr('aria-hidden', 'true');
+    $('body').removeClass('modal-open');
+    $('.modal-backdrop').remove();
+
+    // Show the modal using Bootstrap API
+    $modal.modal('show');
+    
+    }
+
+    function closeScormModal(){
+
+        $('#scormModal').modal('hide');
+
+    }
+
+
+
   function downloadSCORM(analysis_id) {
     alert("SCORM package download started!");
     window.location.href = `/download_all_materials/${analysis_id}?scorm=2004`; 
-     
-    // Close the modal and remove the backdrop
-        // Hide the modal
-        const modal = document.getElementById('scormModal');
-        modal.style.display = 'none';
-        modal.classList.remove('show');
-
-        // Remove the backdrop
-        const backdrop = document.querySelector('.modal-backdrop');
-        if (backdrop) {
-            backdrop.parentNode.removeChild(backdrop);
-        }
-
-        // Restore body class and padding
-        document.body.classList.remove('modal-open');
-        document.body.style.paddingRight = '';
-    
+    $('#scormModal').modal('hide');
   }
 
   // ✅ Detect any click, and reset if modal is hidden
