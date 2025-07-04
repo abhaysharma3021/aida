@@ -434,6 +434,7 @@
     transform: scale(1.05);
 }
 </style>
+{% endblock %}
 
 {% block extra_js %}
 <script>
@@ -499,26 +500,45 @@ document.addEventListener('DOMContentLoaded', function() {
   function downloadSCORM(analysis_id) {
     alert("SCORM package download started!");
     window.location.href = `/download_all_materials/${analysis_id}?scorm=2004`; 
+     
+    // Close the modal and remove the backdrop
+        // Hide the modal
+        const modal = document.getElementById('scormModal');
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+
+        // Remove the backdrop
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.parentNode.removeChild(backdrop);
+        }
+
+        // Restore body class and padding
+        document.body.classList.remove('modal-open');
+        document.body.style.paddingRight = '';
+    
   }
 
   // ✅ Detect any click, and reset if modal is hidden
   document.addEventListener("click", function () {
-    var modalStyle = window.getComputedStyle(scormModal);
-    var isHidden = modalStyle.display === "none";
+    resetModal();
+       
+  });
+
+  function resetModal(){
+        var modalStyle = window.getComputedStyle(scormModal);
+        var isHidden = modalStyle.display === "none";
+        var templatepreview = document.getElementById('templatepreview');
 
     if (isHidden) {
       templateSelect.value = "";
       versionSelect.value = "";
+      templatepreview.style.display = "none";
       downloadBtn.disabled = true;
       errorMessage.style.display = "none";
     }
-  });
+    }
 </script>
 
 
-
-
-
-
-{% endblock %}
 {% endblock %}
