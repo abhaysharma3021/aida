@@ -530,46 +530,53 @@ document.getElementById('saveBtn').addEventListener('click', function () {
         }
     });
     function toggleList(type) {
-        var textarea = document.getElementById('material_content');
-        var start = textarea.selectionStart;
-        var end = textarea.selectionEnd;
-        var selectedText = textarea.value.substring(start, end);
-        
-        if (selectedText.trim() !== '') {
-            var lines = selectedText.split('\n');
-            var isUnordered = lines.every(line => line.trim().startsWith('- '));
-            var isOrdered = lines.every(line => /^\d+\.\s/.test(line.trim()));
-            var formattedLines;
+    var textarea = document.getElementById('material_content');
+    textarea.focus();
 
-            if (type === 'unordered') {
-                if (isUnordered) {
-                    // Remove unordered list formatting
-                    formattedLines = lines.map(line => line.replace(/^- /, '')).join('\n');
-                } else {
-                    // Convert to unordered list
-                    formattedLines = lines
-                        .map(line => line.replace(/^\d+\.\s/, '')) // Remove ordered list if present
-                        .map(line => `- ${line}`)
-                        .join('\n');
-                }
-            } else if (type === 'ordered') {
-                if (isOrdered) {
-                    // Remove ordered list formatting
-                    formattedLines = lines.map(line => line.replace(/^\d+\.\s/, '')).join('\n');
-                } else {
-                    // Convert to ordered list with correct numbering
-                    var firstIndex = lines[0].startsWith('- ') ? 1 : parseInt(lines[0].match(/(\d+)\./)[1]) || 1;
-                    var newIndex = index + 1;
-                    formattedLines = lines
-                        .map(line => line.replace(/^- /, '')) // Remove unordered list if present
-                        .map((line, newIndex) => `${firstIndex + index}. ${line}`)
-                        .join('\n');
-                }
-            }
-            // Replace selected text with formatted text
-            textarea.setRangeText(formattedLines, start, end, 'end');
+    var start = textarea.selectionStart;
+    var end = textarea.selectionEnd;
+    var value = textarea.value;
+
+    // Expand selection to whole lines
+    var before = value.lastIndexOf('\n', start - 1) + 1;
+    var after = value.indexOf('\n', end);
+    if (after === -1) after = value.length;
+
+    var selectedText = value.substring(before, after);
+    var lines = selectedText.split('\n');
+
+    var isUnordered = lines.every(line => line.trim().startsWith('- '));
+    var isOrdered = lines.every(line => /^\d+\.\s/.test(line.trim()));
+
+    var formattedLines;
+
+    if (type === 'unordered') {
+        if (isUnordered) {
+            formattedLines = lines.map(line => line.replace(/^\s*-\s/, '')).join('\n');
+        } else {
+            formattedLines = lines
+                .map(line => line.replace(/^\s*\d+\.\s*/, '').trim()) // remove ordered format
+                .map(line => `- ${line}`)
+                .join('\n');
+        }
+    } else if (type === 'ordered') {
+        if (isOrdered) {
+            formattedLines = lines.map(line => line.replace(/^\s*\d+\.\s*/, '')).join('\n');
+        } else {
+            formattedLines = lines
+                .map(line => line.replace(/^\s*-\s*/, '').trim()) // remove unordered
+                .map((line, index) => `${index + 1}. ${line}`)
+                .join('\n');
         }
     }
+
+    // Replace the full-line selection with formatted text
+    textarea.setRangeText(formattedLines, before, after, 'end');
+
+    // Restore cursor/selection
+    textarea.selectionStart = before;
+    textarea.selectionEnd = before + formattedLines.length;
+}
     // Event listeners for list buttons
     document.getElementById('unorderedListBtn').addEventListener('click', () => {
         toggleList('unordered');
@@ -801,7 +808,7 @@ document.getElementById('saveBtn').addEventListener('click', function () {
         wrapSelection("*");
     });
     document.querySelector(".imgUnderline").addEventListener("click", () => {
-        wrapSelection("_");
+        underlinewrapSelection("_");
     });
     document.querySelector(".imgImage").addEventListener("click", () => {
         document.querySelector(".imagepopup").style.display = "flex";
@@ -907,6 +914,91 @@ document.getElementById('saveBtn').addEventListener('click', function () {
         });
         textarea.value = lines.join("\n");
     }
+	function underlinewrapSelection(wrapper) {
+
+        const textarea = document.getElementById('material_content');
+    textarea.focus();
+
+    const { selectionStart, selectionEnd, value } = textarea;
+
+    let selectedText = value.slice(selectionStart, selectionEnd);
+    if (!selectedText) return;
+
+    const leadingSpaces = selectedText.match(/^\s*/)?.[0] || '';
+    const trailingSpaces = selectedText.match(/\s*$/)?.[0] || '';
+    const trimmedText = selectedText.trim();
+
+    // --- Case 1: selected text is exactly wrapped
+    if (trimmedText.startsWith(wrapper) && trimmedText.endsWith(wrapper)) {
+        const newText = trimmedText.slice(wrapper.length, -wrapper.length);
+        const finalText = leadingSpaces + newText + trailingSpaces;
+
+        textarea.value =
+            value.slice(0, selectionStart) +
+            finalText +
+            value.slice(selectionEnd);
+
+        textarea.setSelectionRange(selectionStart, selectionStart + finalText.length);
+        return;
+    }
+
+    // --- Case 2: selected inside _wrapper_, e.g., selecting "solve" from "_solve_"
+    const pre = value.slice(selectionStart - wrapper.length, selectionStart);
+    const post = value.slice(selectionEnd, selectionEnd + wrapper.length);
+
+    if (pre === wrapper && post === wrapper) {
+        textarea.value =
+            value.slice(0, selectionStart - wrapper.length) +
+            trimmedText +
+            value.slice(selectionEnd + wrapper.length);
+
+        textarea.setSelectionRange(
+            selectionStart - wrapper.length,
+            selectionStart - wrapper.length + trimmedText.length
+        );
+        return;
+    }
+
+    // --- Case 3: inside **_text_** or _**text**_
+    const fullText = value;
+    const start = selectionStart;
+    const end = selectionEnd;
+
+    // Look backwards and forwards for _ wrapper specifically
+    const maxLook = 10;
+    for (let offset = 1; offset <= maxLook; offset++) {
+        const before = fullText.slice(start - offset - wrapper.length, start - offset);
+        const after = fullText.slice(end + offset, end + offset + wrapper.length);
+
+        const inner = fullText.slice(start - offset, end + offset);
+
+        if (before === wrapper && after === wrapper) {
+            // Remove the _ wrapper
+            textarea.value =
+                fullText.slice(0, start - offset - wrapper.length) +
+                inner +
+                fullText.slice(end + offset + wrapper.length);
+
+            textarea.setSelectionRange(
+                start - offset - wrapper.length,
+                start - offset - wrapper.length + inner.length
+            );
+            return;
+        }
+    }
+
+    // --- Default: apply wrapper
+    const newContent = wrapper + trimmedText + wrapper;
+    textarea.value =
+        value.slice(0, selectionStart) +
+        leadingSpaces + newContent + trailingSpaces +
+        value.slice(selectionEnd);
+
+    const newLength = (textarea.value.length - value.length) + (selectionEnd - selectionStart);
+    textarea.setSelectionRange(selectionStart, selectionStart + newLength);
+   
+}									 
+
     function wrapSelection(wrapper) {
         const textarea = editor.textarea;
         const { selectionStart, selectionEnd, value } = textarea;
@@ -965,15 +1057,19 @@ document.getElementById('saveBtn').addEventListener('click', function () {
         }
         else {
             // ⛔ Fallback: Check context around selection to unwrap even if selection doesn't include asterisks
-            const pre = value.slice(selectionStart - wrapper.length, selectionStart);
-            const post = value.slice(selectionEnd, selectionEnd + wrapper.length);
-            const fullPre = value.slice(selectionStart - 3, selectionStart);
-            const fullPost = value.slice(selectionEnd, selectionEnd + 3);
+            const pre1 = value.slice(selectionStart - 1, selectionStart);
+            const post1 = value.slice(selectionEnd, selectionEnd + 1);
+            const pre2 = value.slice(selectionStart - 2, selectionStart);
+            const post2 = value.slice(selectionEnd, selectionEnd + 2);
+            const pre3 = value.slice(selectionStart - 3, selectionStart);
+            const post3 = value.slice(selectionEnd, selectionEnd + 3);
+
 
             const isWrapped =
-                (isBold && pre === '**' && post === '**') ||
-                (isItalic && pre === '*' && post === '*') ||
-                (fullPre === '***' && fullPost === '***');
+            (isBold && pre2 === '**' && post2 === '**') ||
+            (isItalic && pre1 === '*' && post1 === '*') ||
+            (pre3 === '***' && post3 === '***');
+
 
             if (isWrapped) {
                 const offset = wrapper.length;
@@ -1066,12 +1162,12 @@ document.getElementById('saveBtn').addEventListener('click', function () {
         }
     }
     // Event listeners for the buttons
-    document.getElementById('unorderedListBtn').addEventListener('click', () => {
-        applyList('unordered');
-    });
-    document.getElementById('orderedListBtn').addEventListener('click', () => {
-        applyList('ordered');
-    });
+    //    document.getElementById('unorderedListBtn').addEventListener('click', () => {
+    //         applyList('unordered');
+    //     });
+    //     document.getElementById('orderedListBtn').addEventListener('click', () => {
+    //         applyList('ordered');
+    //     });
     document.getElementById('increaseIndentBtn').addEventListener('click', () => {
         var textarea = document.getElementById('material_content');
         var start = textarea.selectionStart;
