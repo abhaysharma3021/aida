@@ -408,12 +408,27 @@
             iframe #WebResource_new_Markdown {
                 border: none !important;
             }
+            custompre {
+                
+                border-radius: 6px;
+                overflow-x: auto;
+            }
+            custompre customcode {
+                
+                border-radius: 3px;
+                font-family: 'Courier New', monospace;
+            }
         </style>
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
+
+document.getElementById('material_content').addEventListener('click', function() {
+     document.getElementById('headingDropdown').selectedIndex = 0;
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-resize textarea
     var textarea = document.getElementById('material_content');
@@ -598,14 +613,21 @@ document.getElementById('saveBtn').addEventListener('click', function () {
             html = html.replace(/(\_(.+?)\_)/g, "<u>$2</u>");
             html = functions.headingTags(html);
             html = functions.backQuote(html);
-            html = functions.codeTag(html);
             html = functions.imageTag(html);
             html = functions.linkTag(html);
             html = functions.tableTag(html); // New function for table support
             html = functions.ulList(html);
             html = functions.olList(html);
             html = functions.mixedList(html);
-            html = functions.lineBreak(html);
+            // html = functions.lineBreak(html);
+            //html = functions.codeBlock(html);      // ← add this before inlineCodeTag
+            //html = functions.inlineCodeTag(html);  // ← rename your original codeTag
+            html = functions.codeBlock(html); // Code blocks first
+            html = functions.codeTag(html);   // Then inline code (`...`)
+            //html = functions.removeArrows(html);
+            
+
+
             this.preview.innerHTML = html;
         }
         var functions = {
@@ -618,15 +640,32 @@ document.getElementById('saveBtn').addEventListener('click', function () {
                 html = html.replace(/# (.+)/g, "<h1>$1</h1>");
                 return html;
             },
-            lineBreak: (html) => {
-                    // Replace new lines that aren't followed by another tag or list item with <br>
-                    return html.replace(/\n(?!<\/?(ul|ol|li|h[1-6]|blockquote|table|tr|th|td|hr|img|a|code|pre))/g, "<br>");
-                },
+            // lineBreak: (html) => {
+            //         // Replace new lines that aren't followed by another tag or list item with <br>
+            //         return html.replace(/\n(?!<\/?(ul|ol|li|h[1-6]|blockquote|table|tr|th|td|hr|img|a|code|pre))/g, "<br>");
+            //     },
+            removeArrows: (html) => {
+                return html.replace(/[<>]/g, '');
+            },
             backQuote: (html) => {
                 return html.replace(/^\> (.+)/gm, "<blockquote>$1</blockquote>");
             },
+            codeBlock: (html) => {
+                return html.replace(/```(?:\w+)?\s*\n([\s\S]*?)\n?```(?:\r?\n)?/g, (match, code) => {
+                    const escapedCode = code
+                        .replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;")
+                        .replace(/>/g, "&gt;");
+                    return `<div style="background-color: lightgrey;padding: 1em;">
+                        <custompre><customcode>${escapedCode}</customcode></custompre>
+                        </div>\n`;
+                });
+            },
             codeTag: (html) => {
                 return html.replace(/\`(.+?)\`/g, "<code>$1</code>");
+            },
+            inlineCodeTag: (html) => {
+                return html.replace(/`(.+?)`/g, "<code style='background-color: rgba(0,0,0,0.05); padding: 0 4px;'>$1</code>");
             },
             horizontalRule: (html) => {
                 return html.replace(/---/g, "<hr>");
@@ -757,7 +796,7 @@ document.getElementById('saveBtn').addEventListener('click', function () {
                         .replace(/<li>(.*?)<\/li>/g, (_, listItem) => `${++counter}. ${listItem.trim()}\n`)
                         .trim();
                 })
-                .replace(/<br>/g, '\n') // Convert line breaks
+                //.replace(/<br>/g, '\n') // Convert line breaks
                 .replace(/<\/?[^>]+(>|$)/g, ''); // Remove any remaining HTML tags
 
             // Replace the selected text in the textarea with the Markdown
@@ -914,13 +953,17 @@ document.getElementById('saveBtn').addEventListener('click', function () {
         });
         textarea.value = lines.join("\n");
     }
-	function underlinewrapSelection(wrapper) {
 
-        const textarea = document.getElementById('material_content');
+    // Final improved underlinewrapSelection using wrapper-style logic
+// Final improved underlinewrapSelection using wrapper-style logic
+// Final improved underlinewrapSelection using wrapper-style logic
+// Updated underlinewrapSelection for precise selection trimming
+// Updated underlinewrapSelection to maintain accurate selection range after removal
+function underlinewrapSelection(wrapper) {
+    const textarea = document.getElementById('material_content');
     textarea.focus();
 
     const { selectionStart, selectionEnd, value } = textarea;
-
     let selectedText = value.slice(selectionStart, selectionEnd);
     if (!selectedText) return;
 
@@ -928,24 +971,78 @@ document.getElementById('saveBtn').addEventListener('click', function () {
     const trailingSpaces = selectedText.match(/\s*$/)?.[0] || '';
     const trimmedText = selectedText.trim();
 
-    // --- Case 1: selected text is exactly wrapped
-    if (trimmedText.startsWith(wrapper) && trimmedText.endsWith(wrapper)) {
-        const newText = trimmedText.slice(wrapper.length, -wrapper.length);
-        const finalText = leadingSpaces + newText + trailingSpaces;
+    let newContent;
+
+    // === Regex to detect only markdown underline styling inside selection ===
+    let innerMatch = trimmedText;
+    let detectedUnderline = '';
+
+    if (/^_{3}[^_]+_{3}$/.test(trimmedText)) {
+        innerMatch = trimmedText.slice(3, -3);
+        detectedUnderline = '___';
+    } else if (/^_{2}[^_]+_{2}$/.test(trimmedText)) {
+        innerMatch = trimmedText.slice(2, -2);
+        detectedUnderline = '__';
+    } else if (/^_[^_]+_$/.test(trimmedText)) {
+        innerMatch = trimmedText.slice(1, -1);
+        detectedUnderline = '_';
+    } else {
+        const outerMatch = value.slice(Math.max(0, selectionStart - 100), Math.min(value.length, selectionEnd + 100));
+        const underlineWrapperRegex = /(_{1,3})(\*{0,3})([^_\n]+?)(\*{0,3})\1/g;
+
+        for (const match of outerMatch.matchAll(underlineWrapperRegex)) {
+            const full = match[0];
+            const startIdx = value.indexOf(full);
+            const innerText = match[3];
+            const starsBefore = match[2];
+            const starsAfter = match[4];
+            const fullLength = full.length;
+
+            if (selectionStart >= startIdx && selectionEnd <= startIdx + fullLength) {
+                textarea.value = value.slice(0, startIdx) + starsBefore + innerText + starsAfter + value.slice(startIdx + fullLength);
+                const newStart = startIdx + starsBefore.length;
+                textarea.setSelectionRange(newStart, newStart + innerText.length);
+                return;
+            }
+        }
+
+        const styleMatch = trimmedText.match(/^(.*?)(_+[^_]+_+)(.*?)$/);
+        if (styleMatch) {
+            const prefix = styleMatch[1];
+            const underlined = styleMatch[2];
+            const suffix = styleMatch[3];
+
+            const stripped = underlined.replace(/^_+/, '').replace(/_+$/, '');
+            newContent = prefix + stripped + suffix;
+
+            const finalText = leadingSpaces + newContent + trailingSpaces;
+            const replacement = value.slice(0, selectionStart) + finalText + value.slice(selectionEnd);
+
+            textarea.value = replacement;
+            const newStart = selectionStart + prefix.length + leadingSpaces.length;
+            textarea.setSelectionRange(newStart, newStart + stripped.length);
+            return;
+        }
+    }
+
+    // === CASE: Full wrapper match like _text_ ===
+    if (detectedUnderline) {
+        newContent = innerMatch;
+        const finalText = leadingSpaces + newContent + trailingSpaces;
 
         textarea.value =
             value.slice(0, selectionStart) +
             finalText +
             value.slice(selectionEnd);
 
-        textarea.setSelectionRange(selectionStart, selectionStart + finalText.length);
+        const newStart = selectionStart + leadingSpaces.length;
+        textarea.setSelectionRange(newStart, newStart + innerMatch.length);
         return;
     }
 
-    // --- Case 2: selected inside _wrapper_, e.g., selecting "solve" from "_solve_"
+    // === Fallback: Check if wrapper exists around the text
     const pre = value.slice(selectionStart - wrapper.length, selectionStart);
     const post = value.slice(selectionEnd, selectionEnd + wrapper.length);
-
     if (pre === wrapper && post === wrapper) {
         textarea.value =
             value.slice(0, selectionStart - wrapper.length) +
@@ -959,69 +1056,133 @@ document.getElementById('saveBtn').addEventListener('click', function () {
         return;
     }
 
-    // --- Case 3: inside **_text_** or _**text**_
-    const fullText = value;
-    const start = selectionStart;
-    const end = selectionEnd;
+    // === Apply new underline ===
+    newContent = wrapper + trimmedText + wrapper;
+    const finalText = leadingSpaces + newContent + trailingSpaces;
 
-    // Look backwards and forwards for _ wrapper specifically
-    const maxLook = 10;
-    for (let offset = 1; offset <= maxLook; offset++) {
-        const before = fullText.slice(start - offset - wrapper.length, start - offset);
-        const after = fullText.slice(end + offset, end + offset + wrapper.length);
-
-        const inner = fullText.slice(start - offset, end + offset);
-
-        if (before === wrapper && after === wrapper) {
-            // Remove the _ wrapper
-            textarea.value =
-                fullText.slice(0, start - offset - wrapper.length) +
-                inner +
-                fullText.slice(end + offset + wrapper.length);
-
-            textarea.setSelectionRange(
-                start - offset - wrapper.length,
-                start - offset - wrapper.length + inner.length
-            );
-            return;
-        }
-    }
-
-    // --- Default: apply wrapper
-    const newContent = wrapper + trimmedText + wrapper;
     textarea.value =
         value.slice(0, selectionStart) +
-        leadingSpaces + newContent + trailingSpaces +
+        finalText +
         value.slice(selectionEnd);
 
-    const newLength = (textarea.value.length - value.length) + (selectionEnd - selectionStart);
-    textarea.setSelectionRange(selectionStart, selectionStart + newLength);
-   
-}									 
+    const newStart = selectionStart + leadingSpaces.length;
+    textarea.setSelectionRange(newStart, newStart + newContent.length);
+    textarea.focus();
+}
+
+
+
+
+
+
 
     function wrapSelection(wrapper) {
         const textarea = editor.textarea;
-        const { selectionStart, selectionEnd, value } = textarea;
+    const { selectionStart, selectionEnd, value } = textarea;
 
-        let selectedText = value.slice(selectionStart, selectionEnd);
-        if (!selectedText) return;
+    let selectedText = value.slice(selectionStart, selectionEnd);
+    if (!selectedText) return;
 
-        const leadingSpaces = selectedText.match(/^\s*/)[0];
-        const trailingSpaces = selectedText.match(/\s*$/)[0];
-        const trimmedText = selectedText.trim();
+    const leadingSpaces = selectedText.match(/^\s*/)[0];
+    const trailingSpaces = selectedText.match(/\s*$/)[0];
+    const trimmedText = selectedText.trim();
 
-        const isItalic = wrapper === '*';
-        const isBold = wrapper === '**';
-        const fullBoldItalic = '***';
+    const isItalic = wrapper === '*';
+    const isBold = wrapper === '**';
 
-        const startsWith = (text, mark) => text.startsWith(mark) && text.endsWith(mark);
-        const strip = (text, mark) => text.slice(mark.length, -mark.length);
+    let newContent;
 
-        let newContent;
-        let cleanText = trimmedText;
+    // === Regex to detect only markdown styling inside selection ===
+    let innerMatch = trimmedText;
+    let detectedStyle = '';
+    let replaced = false;
+
+    // Detect ***...***
+    if (/^\*\*\*[^*]+\*\*\*$/.test(trimmedText)) {
+        innerMatch = trimmedText.slice(3, -3);
+        detectedStyle = 'bolditalic';
+    } else if (/^\*\*[^*]+\*\*$/.test(trimmedText)) {
+        innerMatch = trimmedText.slice(2, -2);
+        detectedStyle = 'bold';
+    } else if (/^\*[^*]+\*$/.test(trimmedText)) {
+        innerMatch = trimmedText.slice(1, -1);
+        detectedStyle = 'italic';
+    } else {
+        // ✅ Try to detect inline styles even if surrounded, like _***text***_
+        const styleMatch = trimmedText.match(/^(.*?)(\*\*\*[^*]+\*\*\*|\*\*[^*]+\*\*|\*[^*]+\*)(.*?)$/);
+        if (styleMatch) {
+            const prefix = styleMatch[1];
+            const styled = styleMatch[2];
+            const suffix = styleMatch[3];
+
+            if (/^\*\*\*[^*]+\*\*\*$/.test(styled)) {
+                detectedStyle = 'bolditalic';
+                innerMatch = styled.slice(3, -3);
+                newContent = isBold ? `${prefix}*${innerMatch}*${suffix}` : `${prefix}**${innerMatch}**${suffix}`;
+            } else if (/^\*\*[^*]+\*\*$/.test(styled)) {
+                detectedStyle = 'bold';
+                innerMatch = styled.slice(2, -2);
+                if (isBold) {
+                    newContent = `${prefix}${innerMatch}${suffix}`;
+                } else {
+                    newContent = `${prefix}***${innerMatch}***${suffix}`;
+                }
+            } else if (/^\*[^*]+\*$/.test(styled)) {
+                detectedStyle = 'italic';
+                innerMatch = styled.slice(1, -1);
+                if (isItalic) {
+                    newContent = `${prefix}${innerMatch}${suffix}`;
+                } else {
+                    newContent = `${prefix}***${innerMatch}***${suffix}`;
+                }
+            }
+
+            if (newContent) {
+                textarea.value =
+                    value.slice(0, selectionStart) +
+                    leadingSpaces + newContent + trailingSpaces +
+                    value.slice(selectionEnd);
+
+                const newLength = newContent.length + leadingSpaces.length + trailingSpaces.length;
+                textarea.setSelectionRange(selectionStart, selectionStart + newLength);
+                textarea.focus();
+                return;
+            }
+        }
+    }
+
+    // Handle full trimmed match
+    if (detectedStyle === 'bolditalic') {
+        newContent = isBold ? `*${innerMatch}*` : `**${innerMatch}**`;
+    } else if (detectedStyle === 'bold' && isBold) {
+        newContent = innerMatch;
+    } else if (detectedStyle === 'italic' && isItalic) {
+        newContent = innerMatch;
+    } else if (detectedStyle === 'bold' && isItalic) {
+        newContent = `***${innerMatch}***`;
+    } else if (detectedStyle === 'italic' && isBold) {
+        newContent = `***${innerMatch}***`;
+    } else if (detectedStyle === 'bolditalic' && isItalic) {
+        newContent = `**${innerMatch}**`;
+    } else if (detectedStyle === 'bolditalic' && isBold) {
+        newContent = `*${innerMatch}*`;
+    }
+
+    if (newContent) {
+        textarea.value =
+            value.slice(0, selectionStart) +
+            leadingSpaces + newContent + trailingSpaces +
+            value.slice(selectionEnd);
+
+        const newLength = newContent.length + leadingSpaces.length + trailingSpaces.length;
+        textarea.setSelectionRange(selectionStart, selectionStart + newLength);
+        textarea.focus();
+        return;
+    }
+
 
         // --- CASE: ***bold+italic*** toggle ---
-        if (startsWith(trimmedText, fullBoldItalic)) {
+        /*if (startsWith(trimmedText, fullBoldItalic)) {
             cleanText = strip(trimmedText, fullBoldItalic);
             newContent = isBold ? `*${cleanText}*` : `**${cleanText}**`; // toggle down
         }
@@ -1054,43 +1215,126 @@ document.getElementById('saveBtn').addEventListener('click', function () {
         else if (startsWith(trimmedText, fullBoldItalic) && isItalic) {
             cleanText = strip(trimmedText, fullBoldItalic);
             newContent = `**${cleanText}**`;
-        }
+        }*/
         else {
-            // ⛔ Fallback: Check context around selection to unwrap even if selection doesn't include asterisks
-            const pre1 = value.slice(selectionStart - 1, selectionStart);
-            const post1 = value.slice(selectionEnd, selectionEnd + 1);
-            const pre2 = value.slice(selectionStart - 2, selectionStart);
-            const post2 = value.slice(selectionEnd, selectionEnd + 2);
-            const pre3 = value.slice(selectionStart - 3, selectionStart);
-            const post3 = value.slice(selectionEnd, selectionEnd + 3);
 
+    const pre1 = value.slice(selectionStart - 1, selectionStart);
+    const post1 = value.slice(selectionEnd, selectionEnd + 1);
+    const pre2 = value.slice(selectionStart - 2, selectionStart);
+    const post2 = value.slice(selectionEnd, selectionEnd + 2);
+    const pre3 = value.slice(selectionStart - 3, selectionStart);
+    const post3 = value.slice(selectionEnd, selectionEnd + 3);
 
-            const isWrapped =
-            (isBold && pre2 === '**' && post2 === '**') ||
-            (isItalic && pre1 === '*' && post1 === '*') ||
-            (pre3 === '***' && post3 === '***');
+    let isBoldItalicWrapped = false;
+    let isBoldWrapped = false;
+    let isItalicWrapped = false;
 
+    if (pre3 === '***' && post3 === '***') {
+        isBoldItalicWrapped = true;
+    } else if (pre2 === '**' && post2 === '**') {
+        isBoldWrapped = true;
+    } else if (pre1 === '*' && post1 === '*') {
+        isItalicWrapped = true;
+    }
 
-            if (isWrapped) {
-                const offset = wrapper.length;
-                const outerOffset = 3;
+    const innerText = selectedText;
 
-                let removeLen = isBold || isItalic ? offset : outerOffset;
-                textarea.value =
-                    value.slice(0, selectionStart - removeLen) +
-                    trimmedText +
-                    value.slice(selectionEnd + removeLen);
+    // === BOLD WRAPPER CLICKED ===
+    if (isBold) {
+        if (isBoldItalicWrapped) {
+            // ***text*** → Italic only
+            textarea.value =
+                value.slice(0, selectionStart - 3) +
+                '*' + innerText + '*' +
+                value.slice(selectionEnd + 3);
 
-                textarea.setSelectionRange(
-                    selectionStart - removeLen,
-                    selectionStart - removeLen + trimmedText.length
-                );
-                textarea.focus();
-                return;
-            }
+            textarea.setSelectionRange(
+                selectionStart - 3,
+                selectionStart - 3 + innerText.length + 2
+            );
+            textarea.focus();
+            return;
+        }
+        if (isBoldWrapped) {
+            // **text** → remove bold
+            textarea.value =
+                value.slice(0, selectionStart - 2) +
+                innerText +
+                value.slice(selectionEnd + 2);
 
-            // Default wrap
-            newContent = wrapper + trimmedText + wrapper;
+            textarea.setSelectionRange(
+                selectionStart - 2,
+                selectionStart - 2 + innerText.length
+            );
+            textarea.focus();
+            return;
+        }
+        if (isItalicWrapped) {
+            // *text* + Bold → ***text***
+            textarea.value =
+                value.slice(0, selectionStart - 1) +
+                '***' + innerText + '***' +
+                value.slice(selectionEnd + 1);
+
+            textarea.setSelectionRange(
+                selectionStart - 1,
+                selectionStart - 1 + innerText.length + 6
+            );
+            textarea.focus();
+            return;
+        }
+    }
+
+    // === ITALIC WRAPPER CLICKED ===
+    if (isItalic) {
+        if (isBoldItalicWrapped) {
+            // ***text*** → Bold only
+            textarea.value =
+                value.slice(0, selectionStart - 3) +
+                '**' + innerText + '**' +
+                value.slice(selectionEnd + 3);
+
+            textarea.setSelectionRange(
+                selectionStart - 3,
+                selectionStart - 3 + innerText.length + 4
+            );
+            textarea.focus();
+            return;
+        }
+        if (isItalicWrapped) {
+            // *text* → remove italic
+            textarea.value =
+                value.slice(0, selectionStart - 1) +
+                innerText +
+                value.slice(selectionEnd + 1);
+
+            textarea.setSelectionRange(
+                selectionStart - 1,
+                selectionStart - 1 + innerText.length
+            );
+            textarea.focus();
+            return;
+        }
+        if (isBoldWrapped) {
+            // **text** + Italic → ***text***
+            textarea.value =
+                value.slice(0, selectionStart - 2) +
+                '***' + innerText + '***' +
+                value.slice(selectionEnd + 2);
+
+            textarea.setSelectionRange(
+                selectionStart - 2,
+                selectionStart - 2 + innerText.length + 6
+            );
+            textarea.focus();
+            return;
+        }
+    }
+
+    // === Fallback: Not styled → Apply wrapper ===
+    newContent = wrapper + trimmedText + wrapper;
+            
+        
         }
 
         // ✅ Replace with new content
@@ -1205,6 +1449,11 @@ document.getElementById('saveBtn').addEventListener('click', function () {
         var textarea = document.getElementById("material_content");
         replaceLiteralWithActual(textarea, "\\n", "\n"); // replace literal \n with actual newline
         replaceLiteralWithActual(textarea, "\\t", "    "); // replace literal \t with 4 spaces
+        replaceLiteralWithActual(textarea, "<", "");          // Remove <
+        replaceLiteralWithActual(textarea, ">", "");  
+       textarea.value = textarea.value.replace(/(^|\s)\*(\s|$)/g, function (match, p1, p2) {
+        return p1 + '-' + p2;
+    }); // Replace standalone * with -
     });
 
     
