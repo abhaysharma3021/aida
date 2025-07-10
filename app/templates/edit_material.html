@@ -36,8 +36,8 @@
     <div class="toolbar">
         <img id="viewSourceBtn" src="/static/MS-Learning-icons/icon-view-source-code.png" alt="View Source Code" title="View Source Code" style="cursor: pointer; padding: 10px;">
         <img id="viewPreviewBtn" src="/static/MS-Learning-icons/icon-file-preview.png" alt="View Preview" title="View Preview" style="cursor: pointer; padding: 10px">
-        <img id="viewFileBtn" src="/static/MS-Learning-icons/icon-refresh.png" alt="View File" title="Refresh" style="cursor: pointer; padding: 9px; width: 22px; height: 17px;">
-        <img id="save" src="/static/MS-Learning-icons/icon-save.png" alt="Save" title="Save" onclick="saveMarkdownContent()" style="cursor: pointer; padding: 10px">
+        <!-- <img id="viewFileBtn" src="/static/MS-Learning-icons/icon-refresh.png" alt="View File" title="Refresh" style="cursor: pointer; padding: 9px; width: 22px; height: 17px;"> -->
+        <!-- <img id="save" src="/static/MS-Learning-icons/icon-save.png" alt="Save" title="Save" onclick="saveMarkdownContent()" style="cursor: pointer; padding: 10px"> -->
         <select name="headings" id="headingDropdown">
             <option value="normal" style="font-size: 0.8em;" selected="">Select Heading</option>
             <option value="heading1" style="font-size: 1.6em;">Heading 1</option>
@@ -49,12 +49,15 @@
         <img src="/static/MS-Learning-icons/icon-bold.png" class="fa-solid imgBold" data-action="bold" title="Bold" style="cursor: pointer;" alt="Bold">
         <img src="/static/MS-Learning-icons/icon-ltalic.png" class="fa-solid imgItalic" data-action="italic" title="Italic" style="cursor: pointer;" alt="Italic">
         <img src="/static/MS-Learning-icons/icon-underline.png" class="fa-solid imgUnderline" data-action="underline" title="Underline" style="cursor: pointer;" alt="Underline">
-        <img src="/static/MS-Learning-icons/icon-link.png" class="fa-solid imgLink" data-action="link" title="Link" style="cursor: pointer;" alt="Link">
-        <img src="/static/MS-Learning-icons/icon-image.png" class="fa-solid imgImage" title="Image" style="cursor: pointer;" alt="Image">
+        <!-- <img src="/static/MS-Learning-icons/icon-link.png" class="fa-solid imgLink" data-action="link" title="Link" style="cursor: pointer;" alt="Link"> -->
+        <!-- <img src="/static/MS-Learning-icons/icon-image.png" class="fa-solid imgImage" title="Image" style="cursor: pointer;" alt="Image"> -->
+		<img src="/static/MS-Learning-icons/icon-link.png" class="fa-solid  disabled-imgs" data-action="link" title="This option is currently not supported" alt="Link">
+        <img src="/static/MS-Learning-icons/icon-image.png" class="fa-solid  disabled-imgs" title="This option is currently not supported"  alt="Image">																																									   
         <img id="unorderedListBtn" class="fa-solid" src="/static/MS-Learning-icons/icon-bullet.png" title="Bullets" style="cursor: pointer;" alt="Bullets">
         <img id="orderedListBtn" class="fa-solid" src="/static/MS-Learning-icons/icon-numbering.png" title="Numbering" style="cursor: pointer;" alt="Numbering">
         <img id="increaseIndentBtn" class="fa-solid" src="/static/MS-Learning-icons/icon-indent.png" title="Increase Indent" style="cursor: pointer;" alt="Indent">
-        <img id="ctable" class="fa-solid" src="/static/MS-Learning-icons/icon-table.png" title="Table" style="cursor: pointer;" alt="Table">
+        <!-- <img id="ctable" class="fa-solid" src="/static/MS-Learning-icons/icon-table.png" title="Table" style="cursor: pointer;" alt="Table"> -->
+		<img id="" class="fa-solid disabled-imgs" src="/static/MS-Learning-icons/icon-table.png" title="This option is currently not supported" style="cursor: pointer;" alt="Table">																																									   
 		<img src="/static/MS-Learning-icons/new-line.png" id="insertNewlineBtn" title="Format" alt="Format Line" style="cursor: pointer; padding: 10px;">
 		
    </div>
@@ -223,8 +226,9 @@
                 display: flex;
                 justify-content: flex-start;
                 border: 1px solid #ccc;
-                gap: 0px;
+                gap: 4px;
                 border-bottom: none;
+				 flex-wrap: wrap;
             }
             .toolbar button {
                 padding: 5px 10px;
@@ -418,6 +422,16 @@
                 border-radius: 3px;
                 font-family: 'Courier New', monospace;
             }
+			.disabled-imgs{
+                opacity: 0.5;
+                cursor: unset  !important;
+                              
+            }
+            .disabled-imgs:hover{
+                background-color: unset !important; 
+								   
+													  
+            }
         </style>
 {% endblock %}
 
@@ -521,13 +535,13 @@ document.getElementById('saveBtn').addEventListener('click', function () {
       //history.push(textarea.value);  // Save the current state to history
       redoHistory = [];  // Clear the redo history after a new input
     });
-    document.getElementById("ctable").addEventListener("click", () => {
+    /*document.getElementById("ctable").addEventListener("click", () => {
        document.querySelector(".tablepopup").style.display = "flex";
        document.querySelector(".imagepopup").style.display = "none";
        document.querySelector(".linkpopup").style.display = "none";
        document.querySelector('.overlay').style.display = 'block'; // Show the overlay
-    });
-	document.getElementById("createTable").addEventListener("click", () => {
+    });*/
+	/*document.getElementById("createTable").addEventListener("click", () => {
         var numRows = document.getElementById('numRows').value;
         var numCols = document.getElementById('numCols').value;
         if (!numRows && !numCols){
@@ -543,7 +557,7 @@ document.getElementById('saveBtn').addEventListener('click', function () {
             document.querySelector(".tablepopup").style.display = "none";
             document.querySelector('.overlay').style.display = 'none';
         }
-    });
+    });*/
     function toggleList(type) {
     var textarea = document.getElementById('material_content');
     textarea.focus();
@@ -827,18 +841,18 @@ document.getElementById('saveBtn').addEventListener('click', function () {
         editor.preview.style.display = 'block';
         toggleInteractions();
     });
-    var viewFileBtn = document.getElementById('viewFileBtn');
+    //var viewFileBtn = document.getElementById('viewFileBtn');
     var fileDiv = document.getElementById('file');
     var githubFileUrl = 'https://raw.githubusercontent.com/Birendra71/Dynamics/main/certifications/markdown123.md'; // replace with your GitHub file URL
     // var githubFileUrl = 'https://raw.githubusercontent.com/Birendra71/Dynamics/main/certifications/exam-duration-exam-experience.md';
-    viewFileBtn.addEventListener('click', async () => {
+    /*viewFileBtn.addEventListener('click', async () => {
 	    console.log("clicked");
         try {
             refreshFileContent()
         }
         catch (error) {
         }
-    });
+    });*/
     // Adding event listeners for toolbar icons
     document.querySelector(".imgBold").addEventListener("click", () => {
         wrapSelection("**");
@@ -849,12 +863,12 @@ document.getElementById('saveBtn').addEventListener('click', function () {
     document.querySelector(".imgUnderline").addEventListener("click", () => {
         underlinewrapSelection("_");
     });
-    document.querySelector(".imgImage").addEventListener("click", () => {
+    /*document.querySelector(".imgImage").addEventListener("click", () => {
         document.querySelector(".imagepopup").style.display = "flex";
         document.querySelector(".linkpopup").style.display = "none";
         document.querySelector(".tablepopup").style.display = "none";
         document.querySelector('.overlay').style.display = 'block'; // Show the overlay
-    });
+    });*/
     document.querySelector("#savepath").addEventListener("click", () => {
         var inputpath = document.getElementById('imagelink').value;
         var textarea = editor.textarea;
@@ -885,12 +899,12 @@ document.getElementById('saveBtn').addEventListener('click', function () {
         textarea.value = "!" + value.slice(0, selectionStart) + `[${selectedText}](${url})` + 
             value.slice(selectionEnd);
     }
-    document.querySelector(".imgLink").addEventListener("click", () => {
+    /*document.querySelector(".imgLink").addEventListener("click", () => {
         document.querySelector(".linkpopup").style.display = "flex";
         document.querySelector(".imagepopup").style.display = "none";
         document.querySelector(".tablepopup").style.display = "none";
         document.querySelector('.overlay').style.display = 'block'; // Show the overlay
-    });
+    });*/
     document.querySelector("#savelink").addEventListener("click", () => {
         var inputlink = document.getElementById('linkin').value;
         var textarea = editor.textarea;
@@ -1413,29 +1427,38 @@ function underlinewrapSelection(wrapper) {
     //         applyList('ordered');
     //     });
     document.getElementById('increaseIndentBtn').addEventListener('click', () => {
-        var textarea = document.getElementById('material_content');
-        var start = textarea.selectionStart;
-        var end = textarea.selectionEnd;
-        var lines = textarea.value.split('\n');
+    var textarea = document.getElementById('material_content');
+    var start = textarea.selectionStart;
+    var end = textarea.selectionEnd;
+    var lines = textarea.value.split('\n');
 
-        // Identify the lines to be indented
-        var startLine = textarea.value.substring(0, start).split('\n').length - 1;
-        var endLine = textarea.value.substring(0, end).split('\n').length - 1;
+    var startLine = textarea.value.substring(0, start).split('\n').length - 1;
+    var endLine = textarea.value.substring(0, end).split('\n').length - 1;
 
-        // Indent each line in the selected range
-        for (var i = startLine; i <= endLine; i++) {
-            lines[i] = `  ${lines[i]}`;
-        }
+    // Indent each selected line
+    for (var i = startLine; i <= endLine; i++) {
+        lines[i] = `  ${lines[i]}`;
+    }
 
-        // Update the textarea with the modified content
-        textarea.value = lines.join('\n');
+    // Update the content
+    textarea.value = lines.join('\n');
 
-        // Adjust selection to preserve the range
-        var newStart = start + 2; // Adding 2 spaces at the start
-        var newEnd = end + (endLine - startLine + 1) * 2; // Adjusting for all indented lines
-
+    // Recalculate new selection positions
+    if (start === end) {
+        // Cursor only, move it forward by 2
+        var newCursorPos = start + 2;
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+    } else {
+        // Text was selected
+        var newStart = start + 2;
+        var newEnd = end + (endLine - startLine + 1) * 2;
         textarea.setSelectionRange(newStart, newEnd);
-    });
+    }
+
+    // Restore focus
+    textarea.focus();
+});
+
 </script>
 <script>
     function replaceLiteralWithActual(target, find, replaceWith) {
