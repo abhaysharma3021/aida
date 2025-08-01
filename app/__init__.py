@@ -3,19 +3,87 @@ from config import Config
 import markdown
 import json
 import re
+import logging
+import os                                      
 from markupsafe import Markup
 from authlib.integrations.flask_client import OAuth
 from flask_sqlalchemy import SQLAlchemy
+from logging.handlers import RotatingFileHandler                                                                                                
 
 oauth = OAuth()
 db = SQLAlchemy()
 
+def setup_logger(app: Flask) -> None:
+    """Configure logging for Flask application."""
+    # Create logs directory if it doesn't exist
+    log_dir = os.path.join(app.instance_path, 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+
+    # Set up logger
+    logger = logging.getLogger('my_flask_app')
+    logger.setLevel(logging.DEBUG if app.debug else logging.INFO)
+
+    # Remove any existing handlers to prevent duplicate logs
+    logger.handlers.clear()
+
+    # Create formatter
+    log_format = logging.Formatter(
+        '%(asctime)s [%(levelname)s] [%(name)s] [%(module)s:%(lineno)d] - %(message)s'
+    )
+
+    # Console handler for development
+    if app.debug:
+    # Console
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.DEBUG)
+        console_handler.setFormatter(log_format)
+        logger.addHandler(console_handler)
+
+        # Also log to file
+        log_file = os.path.join(log_dir, 'app_debug.log')
+        file_handler = RotatingFileHandler(
+            log_file,
+            maxBytes=5 * 1024 * 1024,
+            backupCount=3
+        )
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(log_format)
+        logger.addHandler(file_handler)
+
+    else:
+        # File handler for production with rotation
+        log_file = os.path.join(log_dir, 'app.log')
+        file_handler = RotatingFileHandler(
+            log_file,
+            maxBytes=10 * 1024 * 1024,  # 10MB
+            backupCount=5  # Keep 5 backup files
+        )
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(log_format)
+        logger.addHandler(file_handler)
+
+        # Error log file for critical errors
+        error_log_file = os.path.join(log_dir, 'error.log')
+        error_handler = RotatingFileHandler(
+            error_log_file,
+            maxBytes=10 * 1024 * 1024,  # 10MB
+            backupCount=5
+        )
+        error_handler.setLevel(logging.ERROR)
+        error_handler.setFormatter(log_format)
+        logger.addHandler(error_handler)
+
+    # Replace Flask's default logger
+    app.logger.handlers = logger.handlers
+    app.logger.setLevel(logger.level)
+    app.logger.propagate = False
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
     db.init_app(app)
     oauth.init_app(app)
+    setup_logger(app)                                  
 
      # Register Azure AD provider
     oauth.register(
