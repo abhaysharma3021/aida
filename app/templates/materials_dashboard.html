@@ -105,7 +105,7 @@
           <label for="versionSelect" class="form-label fw-bold">Select SCORM Version</label>
           <select id="versionSelect" class="form-select">
             <option value="" disabled selected>Select version</option>
-            <option value="1.2">SCORM 1.2</option>
+            <option value="1.2" disabled>SCORM 1.2</option>
             <option value="2004">SCORM 2004</option>
           </select>
         </div>
@@ -530,7 +530,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
   function downloadSCORM(analysis_id) {
-    alert("SCORM package download started!");
+    // alert("SCORM package download started!");
     window.location.href = `/download_all_materials/${analysis_id}?scorm=2004`; 
     $('#scormModal').modal('hide');
   }
