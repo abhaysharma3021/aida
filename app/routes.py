@@ -1604,6 +1604,7 @@ def download_all_materials(analysis_id):
                             print('assessments')
                             if 'raw_content' in component_data:
                                 asses_json_output = parse_assessment_to_json(component_data['raw_content'])
+                                cleaned_data = asses_json_output
                             elif 'comprehensive_assessments' in component_data:
                                 #asses_json_output = parse_assessment_to_json(component_data['comprehensive_assessments'])
                                 combined_content = (
