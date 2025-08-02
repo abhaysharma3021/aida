@@ -410,9 +410,28 @@ function submitAnswer(questionIndex) {
 
   // Check MCQ
   if (question.options) {
-    isCorrect = userAnswer === question.correct_answer;
+    // isCorrect = userAnswer === question.correct_answer;
     correctAnswer = question.correct_answer;
     reference = question.content_reference || "";
+    if (question.options) {
+      correctAnswer = question.correct_answer;
+      reference = question.content_reference || "";
+
+      // First try exact match
+      if (userAnswer === correctAnswer) {
+        isCorrect = true;
+      } else {
+        // Try fuzzy match: check if user's answer is part of the correct_answer
+        const normalizedUserAnswer = userAnswer.trim().toLowerCase();
+        const normalizedCorrectAnswer = correctAnswer.trim().toLowerCase();
+
+        if (normalizedCorrectAnswer.startsWith(normalizedUserAnswer)) {
+          isCorrect = true;
+        } else {
+          isCorrect = false;
+        }
+      }
+    }
   }
   // Check True/False
   else if (typeof question.correct_answer === "boolean") {
