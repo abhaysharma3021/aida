@@ -1838,6 +1838,7 @@ def parse_assessment_to_json(assessmentRaw_text):
     def process_true_false(lines):
         questions = []
         current_question = {}
+        expect_question_text = False
         for line in lines:
             line = asmt_clean_line(line)
             if line.startswith("Question"):
@@ -1875,6 +1876,7 @@ def parse_assessment_to_json(assessmentRaw_text):
         questions = []
         current_question = {}
         key_points = []
+        expect_question_text = False
         for line in lines:
             line = asmt_clean_line(line)
             if line.startswith("Question"):
@@ -1916,6 +1918,7 @@ def parse_assessment_to_json(assessmentRaw_text):
         questions = []
         current_question = {}
         rubric = {}
+        expect_question_text = False
         for line in lines:
             line = asmt_clean_line(line)
             if line.startswith("Question"):
@@ -1966,6 +1969,7 @@ def parse_assessment_to_json(assessmentRaw_text):
         questions = []
         current_question = {}
         grading_criteria = []
+        expect_question_text = False
         for line in lines:
             line = asmt_clean_line(line)
             if line.startswith("Question"):
