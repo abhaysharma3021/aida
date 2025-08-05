@@ -61,7 +61,7 @@
       }
 
       .main-left-panel {
-        flex: 0 0 24%; /* 25% width, non-shrinkable, non-growable */
+        flex: 0 0 20%; /* 25% width, non-shrinkable, non-growable */
         background-color: #333;
         color: #fff;
         padding: 10px;
@@ -103,7 +103,7 @@
       }
 
       .content-area {
-        /*display: flex;*/
+        display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
@@ -112,7 +112,7 @@
         border-radius: 8px;
         position: relative;
         flex-grow: 1; /* Allow content area to grow */
-        overflow-y: scroll;
+        overflow-y: hidden;
       }
       .navigation-arrows {
         position: absolute;
@@ -357,7 +357,7 @@
           <div
             class="navex-logo"
             style="
-              font-size: 0.5em;
+              font-size: 1em;
               font-weight: bold;
               text-align: center;
               margin-top: auto;
