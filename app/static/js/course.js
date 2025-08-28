@@ -71,7 +71,7 @@ async function loadCourseTitleFromManifest() {
 }
 
 // === Load course and SCORM init ===
-window.onload = async function () {
+window.onload = async function() {
   // Load course title first
   await loadCourseTitleFromManifest();
 
@@ -101,7 +101,7 @@ window.onload = async function () {
     loadTopic(currentModuleIndex, currentTopicIndex);
   }
 
-  setTimeout(function () {
+  setTimeout(function() {
     document.getElementById("loader").style.display = "none";
   }, 1000);
 };
@@ -142,6 +142,12 @@ async function loadAllModules() {
 
 // === Load topic ===
 function loadTopic(modIndex, topicIndex) {
+  const contentArea = document.querySelector('.content-area');
+  contentArea.style.backgroundImage = "url('images/RightpaneBg.png')";
+  contentArea.style.backgroundRepeat = "no-repeat";
+  contentArea.style.backgroundPosition = "bottom";
+  contentArea.style.backgroundSize = "contain";															  
+
   const module = courseData[modIndex];
   if (!module) return;
 
@@ -154,7 +160,56 @@ function loadTopic(modIndex, topicIndex) {
 
   resetNavigationButtons();
 
-  document.getElementById("course-content").innerHTML = `
+  // Initialize HTML parts array for dynamic rendering
+  const htmlParts = [];
+  // Add title if valid (not undefined, null, or empty string)
+  if (topic.title && topic.title !== "") {
+    htmlParts.push(`<h2>${topic.title}</h2>`);
+  }
+
+  // Add overview if valid (not undefined, null, empty string, or empty array)
+  if (topic.overview && (Array.isArray(topic.overview) ? topic.overview.length > 0 : topic.overview !== "")) {
+    const overviewContent = Array.isArray(topic.overview) ? topic.overview.join(" ") : topic.overview;
+    htmlParts.push(`<p><strong>Overview:</strong> ${overviewContent}</p>`);
+  }
+
+  // Add coreConcepts properties if valid
+  if (topic.coreConcepts) {
+    // Definition: not undefined, null, or empty string
+    if (topic.coreConcepts.definition && topic.coreConcepts.definition !== "") {
+      htmlParts.push(`<p><strong>Definition:</strong> ${topic.coreConcepts.definition}</p>`);
+    }
+    // Theoretical Foundation: not undefined, null, or empty string
+    if (topic.coreConcepts.theoreticalFoundation && topic.coreConcepts.theoreticalFoundation !== "") {
+      htmlParts.push(`<p><strong>Theory:</strong> ${topic.coreConcepts.theoreticalFoundation}</p>`);
+    }
+    // Key Components: not undefined, null, or empty array
+    if (topic.coreConcepts.keyComponents && Array.isArray(topic.coreConcepts.keyComponents) && topic.coreConcepts.keyComponents.length > 0) {
+      htmlParts.push(`<p><strong>Key Components:</strong> ${topic.coreConcepts.keyComponents.join(", ")}</p>`);
+    }
+  }
+
+  // Practical Applications: not undefined, null, or empty string
+  if (topic.practicalApplications && topic.practicalApplications !== "") {
+    htmlParts.push(`<p><strong>Practical Use:</strong> ${topic.practicalApplications}</p>`);
+  }
+
+  // Best Practices: not undefined, null, or empty array, and filter out empty items
+  if (topic.bestPractices && Array.isArray(topic.bestPractices) && topic.bestPractices.length > 0) {
+    const bestPracticesList = topic.bestPractices
+      .filter(bp => bp && bp !== "") // Filter out empty or invalid items
+      .map(bp => `<li>${bp}</li>`)
+      .join("");
+    if (bestPracticesList) { // Only add if there are valid items
+      htmlParts.push(`<p><strong>Best Practices:</strong><ul>${bestPracticesList}</ul></p>`);
+    }
+  }
+
+  // Render to DOM, with fallback if no content
+  document.getElementById("course-content").innerHTML = htmlParts.length
+    ? htmlParts.join("")
+    : "<p>No valid content available for this topic.</p>";													
+  /*document.getElementById("course-content").innerHTML = `
     <h2>${topic.title}</h2>
     <p><strong>Overview:</strong> ${topic.overview}</p>
     <p><strong>Definition:</strong> ${topic.coreConcepts.definition}</p>
@@ -166,7 +221,7 @@ function loadTopic(modIndex, topicIndex) {
     <p><strong>Best Practices:</strong><ul>${topic.bestPractices
       .map((bp) => `<li>${bp}</li>`)
       .join("")}</ul></p>
-  `;
+  `;*/
 
   if (typeof topicIndex === "number") {
     suspendData.lastModule = modIndex;
@@ -216,6 +271,11 @@ function loadTopic(modIndex, topicIndex) {
 }
 
 function loadAssessment(modIndex) {
+  const contentArea = document.querySelector('.content-area');
+  contentArea.style.backgroundImage = "url('images/LeftpaneBg.png')";
+  contentArea.style.backgroundRepeat = "no-repeat";
+  contentArea.style.backgroundPosition = "bottom";
+  contentArea.style.backgroundSize = "contain";												   
   const module = courseData[modIndex];
   if (!module || !module.assessment) return;
 
@@ -240,8 +300,9 @@ function loadAssessment(modIndex) {
   updateProgressBar();
 }
 
-function escapeSingleQuotes(str) {
-  return str.replace(/'/g, "\\'");
+function escapeQuotes(str) {
+  return str.replace(/'/g, "\\'")
+    .replace(/"/g, '\\"');
 }
 
 function renderQuestion(questionIndex) {
@@ -269,10 +330,11 @@ function renderQuestion(questionIndex) {
   if (isMCQ) {
     html += `<div class="options mt-3">`;
     question.options.forEach((opt, optIndex) => {
+	  const isCorrect = question.correct_answer === opt;
       const isChecked =
         assessmentState.answers[questionIndex] === opt ? "checked" : "";
       const isDisabled = hasFeedback ? "disabled" : "";
-      const escapedOpt = escapeSingleQuotes(opt);
+      // const escapedOpt = escapeQuotes(opt);
       html += `
         <div class="form-check">
           <input class="form-check-input" type="radio" 
@@ -281,7 +343,7 @@ function renderQuestion(questionIndex) {
                  value="${opt}" 
                  ${isChecked}
                  ${isDisabled}
-                 onchange="recordAnswer(${questionIndex}, '${escapedOpt}')">
+                 onchange="recordAnswer(${questionIndex}, '${optIndex}')">
           <label class="form-check-label" for="q-${questionIndex}-${optIndex}">
             ${opt}
           </label>
@@ -339,25 +401,24 @@ function renderQuestion(questionIndex) {
     // Show feedback
     const feedback = assessmentState.feedback[questionIndex];
     html += `
-      <div class="feedback mt-4 p-3 rounded ${
-        feedback.isCorrect ? "alert-success" : "alert-danger"
+       <div class="feedback mt-4 p-3 rounded ${feedback.isCorrect ? "alert-success" : "alert-danger"
       }">
         <strong>${feedback.isCorrect ? "Correct!" : "Incorrect"}</strong>
         <p>${feedback.message}</p>
         <p><small>${feedback.reference}</small></p>
       </div>
       <div class="mt-3">
-        <button onclick="${
-          questionIndex < questions.length - 1
-            ? "nextQuestion()"
-            : "submitAssessment()"
-        }" 
+						   
+        <button onclick="${questionIndex < questions.length - 1
+        ? "nextQuestion()"
+        : "submitAssessment()"
+      }" 
                 class="btn btn-primary">
-          ${
-            questionIndex < questions.length - 1
-              ? "Next Question"
-              : "Finish Assessment"
-          }
+			
+          ${questionIndex < questions.length - 1
+        ? "Next Question"
+        : "Finish Assessment"
+      }
         </button>
       </div>
     `;
@@ -403,33 +464,40 @@ function submitAnswer(questionIndex) {
   ];
 
   const question = questions[questionIndex];
-  const userAnswer = assessmentState.answers[questionIndex];
+  const userAnswer = question.options ? parseInt(assessmentState.answers[questionIndex]) : assessmentState.answers[questionIndex];
   let isCorrect = false;
   let correctAnswer = "";
   let reference = "";
 
   // Check MCQ
   if (question.options) {
-    // isCorrect = userAnswer === question.correct_answer;
+    const correctAnswerIndex = question.options.findIndex(
+      option => option === question.correct_answer
+    );
+
+    // Compare the selected index with correct answer index
+    isCorrect = userAnswer === correctAnswerIndex;
     correctAnswer = question.correct_answer;
     reference = question.content_reference || "";
-    if (question.options) {
-      correctAnswer = question.correct_answer;
-      reference = question.content_reference || "";
+    if (!isCorrect) {
+      const selectedOption = question.options[userAnswer]?.trim().toLowerCase();
+      const fullCorrectAnswer = correctAnswer.trim().toLowerCase();
 
-      // First try exact match
-      if (userAnswer === correctAnswer) {
+      if (
+        selectedOption &&
+        (fullCorrectAnswer.startsWith(selectedOption) || fullCorrectAnswer.includes(selectedOption))
+      ) {
         isCorrect = true;
-      } else {
-        // Try fuzzy match: check if user's answer is part of the correct_answer
-        const normalizedUserAnswer = userAnswer.trim().toLowerCase();
-        const normalizedCorrectAnswer = correctAnswer.trim().toLowerCase();
+			  
+																				
+																	 
+																		   
 
-        if (normalizedCorrectAnswer.startsWith(normalizedUserAnswer)) {
-          isCorrect = true;
-        } else {
-          isCorrect = false;
-        }
+																	   
+						   
+				
+							
+		 
       }
     }
   }
@@ -445,7 +513,7 @@ function submitAnswer(questionIndex) {
     questionIndex,
     `${modIndex}-${questionIndex}`,
     question.options ? "choice" : "true-false",
-    userAnswer,
+    question.options ? question.options[userAnswer] : userAnswer,
     correctAnswer,
     isCorrect,
 	question.question
@@ -545,11 +613,11 @@ function showAssessmentResults(correct, total) {
         <div class="card-body text-center">
           <h3>${correct} / ${total} Correct</h3>
           <p>Score: ${Math.round((correct / total) * 100)}%</p>
-          ${
-            correct / total >= 0.7
-              ? '<div class="text-success"><strong>Passed</strong></div>'
-              : '<div class="text-danger"><strong>Not Passed</strong></div>'
-          }
+           
+		   ${correct / total >= 0.7
+      ? '<div class="text-success"><strong>Passed</strong></div>'
+      : '<div class="text-danger"><strong>Not Passed</strong></div>'
+    }
         </div>
       </div>
       
@@ -619,8 +687,7 @@ function recordInteraction(
   isCorrect,
   description
 ) {
-  const prefix = `cmi.interactions.Scene${
-    currentModuleIndex + 1
+  const prefix = `cmi.interactions.Scene${currentModuleIndex + 1
   }.${currentTopicIndex}.Question${index + 1}`;
 
   doSetValue(`${prefix}.id`, id);
@@ -730,6 +797,7 @@ function next() {
 }
 
 function prev() {
+  const module = courseData[currentModuleIndex];
   // If we're in an assessment, do nothing (assessment has its own navigation)
   if (currentTopicIndex === "assessment") {
     currentTopicIndex = module.content.chapter.topics.length - 1;
@@ -781,7 +849,7 @@ function updateProgressBar() {
 }
 
 // === Unload handler ===
-window.onbeforeunload = function () {
+window.onbeforeunload = function() {
   const sessionTime = getSessionTime(sessionStartTime);
   doSetValue("cmi.session_time", sessionTime);
   doSetValue("cmi.exit", "suspend");
