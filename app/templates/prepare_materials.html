@@ -85,14 +85,61 @@
                         </div>
                     </div>
                 </div>
-                
+				 <!-- Content Tone Selection Card -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="mb-0"><i class="fas fa-palette"></i> Content Style & Tone</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-3">Choose the tone and style for your course materials. This will affect how the content is written and presented to learners.</p>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="content_tone" class="form-label fw-bold">Content Generation Tone</label>
+                                    <select class="form-select" id="content_tone" name="content_tone">
+                                        <option value="default" selected>Professional & Academic (Default)</option>
+                                        <option value="optimistic">Optimistic & Encouraging</option>
+                                        <option value="entertaining">Engaging & Entertaining</option>
+                                        <option value="humanized">Conversational & Personal</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div id="toneDescription" class="tone-description-box">
+                                    <h6 class="text-primary mb-2">Professional & Academic</h6>
+                                    <p class="small mb-0">Clear, authoritative, and scholarly tone. Professional language with comprehensive explanations. Best for formal learning environments.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tone Preview Examples -->
+                        <div class="mt-3">
+                            <h6 class="text-secondary mb-2">Tone Examples:</h6>
+                            <div class="tone-examples">
+                                <div id="defaultExample" class="tone-example active">
+                                    <strong>Professional & Academic:</strong> <em>"This module covers fundamental concepts in data analysis, providing learners with essential knowledge and practical skills necessary for professional application."</em>
+                                </div>
+                                <div id="optimisticExample" class="tone-example" style="display: none;">
+                                    <strong>Optimistic & Encouraging:</strong> <em>"You're about to embark on an exciting journey into data analysis! This module will empower you with amazing skills that will boost your confidence and open new opportunities."</em>
+                                </div>
+                                <div id="entertainingExample" class="tone-example" style="display: none;">
+                                    <strong>Engaging & Entertaining:</strong> <em>"Welcome to the fascinating world of data analysis! Think of data as detective clues waiting to tell their story - and you're about to become a data detective extraordinaire!"</em>
+                                </div>
+                                <div id="humanizedExample" class="tone-example" style="display: none;">
+                                    <strong>Conversational & Personal:</strong> <em>"Let's talk about data analysis - I know it might seem intimidating at first, but trust me, once you get the hang of it, you'll wonder how you ever worked without these skills!"</em>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>							 
                 <!-- What Will Be Generated Card -->
                 <div class="card mb-4">
                     <div class="card-header bg-success text-white">
                         <h4 class="mb-0"><i class="fas fa-magic"></i> Comprehensive Materials Included</h4>
                     </div>
                     <div class="card-body">
-                        <p class="mb-3">Each selected module will automatically include all comprehensive components:</p>
+                        <p class="mb-3">Each selected module will automatically include all comprehensive components in your chosen tone:</p>
                         
                         <div class="row">
                             <div class="col-md-6">
@@ -244,6 +291,10 @@ Examples:
                             <span><strong>Total Materials:</strong></span>
                             <span id="totalItems" class="badge bg-warning">{{ modules|length * 5 }}</span>
                         </div>
+						<div class="stat-item d-flex justify-content-between mb-3">
+                            <span><strong>Content Tone:</strong></span>
+                            <span id="selectedTone" class="badge bg-info">Professional</span>
+                        </div>											   							
                         <hr>
                         <div class="text-center">
                             <h6 class="text-primary mb-2">Content Volume per Module</h6>
@@ -388,6 +439,29 @@ Examples:
 </div>
 
 <style>
+/* Tone selection styles */
+.tone-description-box {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 1rem;
+    min-height: 80px;
+}
+
+.tone-example {
+    background: #f8f9fa;
+    border-left: 4px solid #007bff;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.tone-example.active {
+    display: block !important;
+}
+
+/* Module selection styles */ 					   						
 .module-selection-card {
     transition: all 0.3s ease;
     border: 2px solid #e9ecef;
@@ -432,6 +506,64 @@ Examples:
 
 {% block extra_js %}
 <script>
+	// Tone selection handling
+    document.addEventListener('DOMContentLoaded', function() {
+        const toneSelect = document.getElementById('content_tone');
+        const toneDescriptionBox = document.querySelector('.tone-description-box');
+        const selectedToneBadge = document.getElementById('selectedTone');
+        
+        const toneDescriptions = {
+            'default': {
+                title: 'Professional & Academic',
+                description: 'Clear, authoritative, and scholarly tone. Professional language with comprehensive explanations. Best for formal learning environments.',
+                badge: 'Professional'
+            },
+            'optimistic': {
+                title: 'Optimistic & Encouraging',
+                description: 'Positive, motivational language that encourages learners. Emphasizes success, growth, and achievement. Great for building confidence.',
+                badge: 'Optimistic'
+            },
+            'entertaining': {
+                title: 'Engaging & Entertaining',
+                description: 'Creative, fun, and engaging approach. Uses analogies, stories, and humor to make learning enjoyable. Perfect for keeping attention.',
+                badge: 'Entertaining'
+            },
+            'humanized': {
+                title: 'Conversational & Personal',
+                description: 'Friendly, conversational tone that feels like learning from a mentor. Personal anecdotes and relatable language.',
+                badge: 'Conversational'
+            }
+        };
+        
+        const toneExamples = {
+            'default': 'defaultExample',
+            'optimistic': 'optimisticExample',
+            'entertaining': 'entertainingExample',
+            'humanized': 'humanizedExample'
+        };
+        
+        function updateToneDisplay(selectedTone) {
+            const info = toneDescriptions[selectedTone];
+            toneDescriptionBox.innerHTML = `
+                <h6 class="text-primary mb-2">${info.title}</h6>
+                <p class="small mb-0">${info.description}</p>
+            `;
+            
+            selectedToneBadge.textContent = info.badge;
+            
+            // Hide all examples
+            document.querySelectorAll('.tone-example').forEach(ex => ex.style.display = 'none');
+            // Show selected example
+            document.getElementById(toneExamples[selectedTone]).style.display = 'block';
+        }
+        
+        toneSelect.addEventListener('change', function() {
+            updateToneDisplay(this.value);
+        });
+        
+        // Initialize with default
+        updateToneDisplay('default');
+    });														  								
     // Module selection handling
     document.getElementById('selectAll').addEventListener('change', function() {
         const moduleCheckboxes = document.querySelectorAll('.module-checkbox');
