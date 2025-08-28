@@ -33,6 +33,43 @@ class CourseDesignRequirementsForm(FlaskForm):
                                  validators=[Optional()])
     module_count = IntegerField('Number of Modules (leave blank to auto-detect from task analysis)', validators=[Optional()])
     
+class MaterialsGenerationForm(FlaskForm):
+    """Form for materials generation with tone selection."""
+    
+    # Tone selection - NEW FIELD
+    content_tone = SelectField(
+        'Content Generation Tone',
+        choices=[
+            ('default', 'Professional & Academic (Default)'),
+            ('optimistic', 'Optimistic & Encouraging'),
+            ('entertaining', 'Engaging & Entertaining'),
+            ('humanized', 'Conversational & Personal')
+        ],
+        default='default',
+        validators=[Optional()],
+        description="Choose the tone and style for generated course materials"
+    )
+    
+    # Detail level
+    detail_level = SelectField(
+        'Detail Level',
+        choices=[
+            ('comprehensive', 'Comprehensive (Recommended)'),
+            ('detailed', 'Detailed'),
+            ('standard', 'Standard')
+        ],
+        default='comprehensive',
+        validators=[Optional()]
+    )
+    
+    # Additional instructions
+    additional_notes = TextAreaField(
+        'Additional Instructions (Optional)',
+        validators=[Optional(), Length(max=2000)],
+        description="Any specific requirements, industry focus, or customizations"
+    )
+    
+    submit = SubmitField('Generate Comprehensive Course Materials')
     # Component generation options
     generate_structure = BooleanField('Generate Course Structure', default=True)
     generate_strategies = BooleanField('Generate Instructional Strategies', default=True)
