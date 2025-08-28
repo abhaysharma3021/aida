@@ -38,6 +38,7 @@ Please follow this EXACT format for the task analysis:
 **II. Task Breakdown:**
 
 **A. [Major Task Category 1]** [Choose categories that logically break down the subject matter]
+
 * **Subtask 1:** [Description of specific subtask]
 
       1. [Detailed step with specific action]
@@ -51,6 +52,7 @@ Please follow this EXACT format for the task analysis:
       3. [Additional steps as needed]
 
 **B. [Major Task Category 2]**
+
 * **Subtask 1:** [Description of subtask]
   
       1. [Detailed step]
@@ -61,6 +63,7 @@ Please follow this EXACT format for the task analysis:
       1. [Detailed steps that break down the concept/practice]
   
 **C. [Major Task Category 3]** [Add more categories if needed based on complexity and audience needs]
+
 * **Subtask 1:** [Description of subtask]
    
       1. [Detailed step]

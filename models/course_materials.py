@@ -1,8 +1,9 @@
 """
-Enhanced Course Materials Generation Module - With Real Assessment Questions
+Enhanced Course Materials Generation Module - With Real Assessment Questions AND Tone Selection
 
 This module generates comprehensive, textbook-style course materials with extensive content,
 detailed explanations, multiple examples, and REAL assessment questions based on actual module content.
+Now includes tone selection for different content styles.                                                      
 """
 
 import json
@@ -21,7 +22,7 @@ from models.groq_client import GroqClient
 
 
 class TextbookStyleCourseMaterialsGenerator:
-    """Class for generating comprehensive, textbook-style course materials with real assessments."""
+    """Class for generating comprehensive, textbook-style course materials with real assessments and tone selection."""
     
     def __init__(self, design_data: Dict[str, Any]):
         """
@@ -41,7 +42,93 @@ class TextbookStyleCourseMaterialsGenerator:
         
         # Extracted data for easy access
         self.modules = self._extract_modules_from_structure()
+    def get_tone_instructions(self, tone: str) -> str:
+        """
+        Get specific instructions for the selected tone.
         
+        Args:
+            tone: The selected tone ('default', 'optimistic', 'entertaining', 'humanized')
+                       
+                      
+                         
+                           
+                          
+                        
+                        
+                        
+                      
+                      
+                      
+            
+        Returns:
+            String with tone-specific instructions for content generation
+        """
+        tone_instructions = {
+            'default': """
+            TONE: Professional & Academic
+            - Use clear, authoritative, and scholarly language
+            - Maintain formal tone throughout
+            - Focus on comprehensive explanations and technical accuracy
+            - Use professional terminology appropriately
+            - Present information objectively and systematically
+            - Examples should be realistic and professionally relevant
+            """,
+            
+            'optimistic': """
+            TONE: Optimistic & Encouraging
+            - Use positive, motivational language that encourages learners
+            - Emphasize success, growth, and achievement opportunities
+            - Frame challenges as exciting learning opportunities
+            - Use phrases like "You will master...", "This empowers you to...", "Great opportunity to..."
+            - Highlight benefits and positive outcomes regularly
+            - Encourage confidence building: "You're building valuable skills..."
+            - Use success-oriented language: "achieve", "excel", "succeed", "thrive"
+            """,
+            
+            'entertaining': """
+            TONE: Engaging & Entertaining
+            - Use creative, fun, and engaging approaches
+            - Include analogies, metaphors, and relatable comparisons
+            - Add appropriate humor and personality to explanations
+            - Use storytelling elements and interesting scenarios
+            - Create memorable examples and vivid descriptions
+            - Use engaging openings: "Imagine if...", "Picture this...", "Here's a fun way to think about..."
+            - Make learning feel like an adventure or discovery
+            - Use creative language while maintaining educational value
+            """,
+            
+            'humanized': """
+            TONE: Conversational & Personal
+            - Write as if speaking directly to a friend or mentee
+            - Use first and second person ("I", "you", "we")
+            - Include personal insights and relatable experiences
+            - Use conversational phrases: "Let me tell you...", "You know how...", "I've found that..."
+            - Share tips and advice in a mentoring style
+            - Acknowledge common struggles: "I know this can be tricky at first..."
+            - Use informal but professional language
+            - Create a sense of personal connection and support
+            """
+        }
+        
+        return tone_instructions.get(tone, tone_instructions['default'])
+                                                          
+        
+    def sanitize_module_title(self, title: str) -> str:
+        replacements = {
+            '&': 'and',
+            '@': 'at',
+            '#': 'sharp',
+            '%': 'percent',
+            '$': 'dollar',
+            '!': 'excl',
+            '*': 'star',
+            '+': 'plus',
+            '=': 'eq',
+            '<': 'lt',
+            '>': 'gt',
+            
+        }
+        return ''.join(replacements.get(c, c) for c in title)                                                   
     def _extract_modules_from_structure(self) -> List[Dict[str, Any]]:
         """Extract module information from course structure for easier processing."""
         modules = []
@@ -49,7 +136,9 @@ class TextbookStyleCourseMaterialsGenerator:
         # Try to extract modules from the course structure markdown
         if isinstance(self.course_structure, str):
             # Pattern to match module headers like "### Module 1: Title" or "## Module 1: Title"
-            module_pattern = r'#{2,3}\s+Module\s+(\d+):\s+([^\n]+)'
+            #module_pattern = r'#{2,3}\s+Module\s+(\d+):\s+([^\n]+)'
+            #module_pattern = r'(?i)#{2,3}\s*Module\s*(\d+)\s*:\s*([^\n]+)'
+            module_pattern = r'(?i)#{1,4}\s*\*{0,3}\s*Module\s*(\d+)\s*:\s*([^\n*]+)'                                                                                                                                      
             matches = re.finditer(module_pattern, self.course_structure)
             
             module_positions = []
@@ -96,7 +185,8 @@ class TextbookStyleCourseMaterialsGenerator:
                 
                 modules.append({
                     "number": pos['number'],
-                    "title": pos['title'],
+                    #"title": pos['title'],
+                    "title": self.sanitize_module_title(pos["title"]),                                                  
                     "objectives": objectives,
                     "topics": topics,
                     "content": module_content
@@ -121,9 +211,11 @@ class TextbookStyleCourseMaterialsGenerator:
     def generate_all_materials(self, 
                               selected_modules: List[int] = None, 
                               components: List[str] = None,
-                              detail_level: str = "comprehensive") -> Dict[str, Any]:
+                              detail_level: str = "comprehensive",
+                              content_tone: str = "default",  # NEW: Tone parameter
+                              additional_notes: str = "") -> Dict[str, Any]:
         """
-        Generate comprehensive textbook-style materials for specified modules.
+        Generate comprehensive textbook-style materials for specified modules with selected tone.
         """
         if selected_modules is None:
             selected_modules = list(range(1, len(self.modules) + 1))
@@ -131,15 +223,21 @@ class TextbookStyleCourseMaterialsGenerator:
         if components is None:
             components = ["lesson_plans", "content", "activities", "assessments", "instructor_guides"]
             
+        # Validate tone
+        valid_tones = ['default', 'optimistic', 'entertaining', 'humanized']
+        if content_tone not in valid_tones:
+            content_tone = 'default'               
         materials = {
             "metadata": {
                 "course_topic": self.course_topic,
                 "audience_type": self.audience_type,
                 "generated_date": datetime.now().strftime("%B %d, %Y at %H:%M"),
                 "detail_level": detail_level,
+                "content_tone": content_tone,  # NEW: Store tone in metadata                                  
                 "total_modules": len(self.modules),
                 "generated_modules": len(selected_modules),
-                "style": "comprehensive_textbook"
+                "style": "comprehensive_textbook",
+                "additional_notes": additional_notes
             },
             "modules": []
         }
@@ -155,42 +253,43 @@ class TextbookStyleCourseMaterialsGenerator:
                 "components": {}
             }
             
-            logger.info(f"Generating comprehensive materials for Module {module_idx}: {module['title']}")
+            logger.info(f"Generating comprehensive materials for Module {module_idx}: {module['title']} in {content_tone} tone")
             
             # Generate content first (needed for assessments)
             module_content = None
             if "content" in components:
-                logger.info(f"  - Generating comprehensive textbook content...")
-                module_content = self.generate_comprehensive_content(module_idx, detail_level)
+                logger.info(f"  - Generating comprehensive textbook content in {content_tone} tone...")
+                module_content = self.generate_comprehensive_content(module_idx, detail_level, content_tone, additional_notes)
                 module_materials["components"]["content"] = module_content
             
             # Generate assessments with real questions based on content
             if "assessments" in components:
-                logger.info(f"  - Generating real assessment questions...")
+                logger.info(f"  - Generating real assessment questions in {content_tone} tone...")
                 module_materials["components"]["assessments"] = self.generate_real_assessments(
-                    module_idx, detail_level, module_content
+                    module_idx, detail_level, module_content, content_tone, additional_notes
                 )
             
             # Generate other components
             if "lesson_plans" in components:
-                logger.info(f"  - Generating detailed lesson plan...")
-                module_materials["components"]["lesson_plan"] = self.generate_detailed_lesson_plan(module_idx, detail_level)
+                logger.info(f"  - Generating detailed lesson plan in {content_tone} tone...")
+                module_materials["components"]["lesson_plan"] = self.generate_detailed_lesson_plan(module_idx, detail_level, content_tone, additional_notes)
                 
             if "activities" in components:
-                logger.info(f"  - Generating extensive activities...")
-                module_materials["components"]["activities"] = self.generate_comprehensive_activities(module_idx, detail_level)
+                logger.info(f"  - Generating extensive activities  in {content_tone} tone...")
+                module_materials["components"]["activities"] = self.generate_comprehensive_activities(module_idx, detail_level, content_tone, additional_notes)
                 
             if "instructor_guides" in components:
-                logger.info(f"  - Generating detailed instructor guide...")
-                module_materials["components"]["instructor_guide"] = self.generate_comprehensive_instructor_guide(module_idx, detail_level)
+                logger.info(f"  - Generating detailed instructor guide in {content_tone} tone...")
+                module_materials["components"]["instructor_guide"] = self.generate_comprehensive_instructor_guide(module_idx, detail_level, content_tone, additional_notes)
                 
             materials["modules"].append(module_materials)
             
         return materials
     
-    def generate_comprehensive_content(self, module_idx: int, detail_level: str = "comprehensive") -> Dict[str, Any]:
+    def generate_comprehensive_content(self, module_idx: int,  detail_level: str = "comprehensive", 
+                                     content_tone: str = "default", additional_notes: str = "") -> Dict[str, Any]:
         """
-        Generate comprehensive, textbook-style instructional content.
+        Generate comprehensive, textbook-style instructional content with specified tone.
         """
         if module_idx < 1 or module_idx > len(self.modules):
             return {"error": "Invalid module index"}
@@ -201,6 +300,8 @@ class TextbookStyleCourseMaterialsGenerator:
         # Extract specific task analysis content for this module
         task_content = self._extract_task_content_for_module(module_idx)
         
+        # Get tone-specific instructions
+        tone_instructions = self.get_tone_instructions(content_tone)
         # Generate comprehensive content
         client = GroqClient()
         
@@ -209,7 +310,12 @@ class TextbookStyleCourseMaterialsGenerator:
         You are creating a comprehensive, textbook-style chapter for Module {module_idx}: {module_title} 
         in a {self.audience_type} level course on {self.course_topic}.
         
-        This should be extensive, detailed educational content similar to what you'd find in a professional textbook.
+        {tone_instructions}
+        
+        IMPORTANT: Apply the tone consistently throughout ALL sections while maintaining educational quality.
+        
+        This should be extensive, detailed educational content similar to what you'd find in a professional textbook,
+        but written in the specified tone style.
         
         MODULE CONTEXT:
         - Title: {module_title}
@@ -221,6 +327,8 @@ class TextbookStyleCourseMaterialsGenerator:
         
         AUDIENCE: {self.audience_type} level learners
         
+        ADDITIONAL REQUIREMENTS:
+        {additional_notes if additional_notes else "No additional requirements specified."}
         Create a comprehensive textbook chapter that includes:
         
         ## Chapter {module_idx}: {module_title}
@@ -307,9 +415,10 @@ class TextbookStyleCourseMaterialsGenerator:
         - Include specific examples, not generic ones
         - Appropriate for {self.audience_type} level
         - Rich with practical applications
-        - Professional and authoritative
+        - Professional and authoritative while maintaining the specified tone
         - Engaging and well-structured
         
+        TONE CONSISTENCY: Every section, explanation, example, and instruction must consistently reflect the {content_tone} tone while maintaining educational effectiveness.                                                  
         IMPORTANT: Do not skip any topic from the module topics list. Each topic must have its own comprehensive section.
         """
         
@@ -322,6 +431,7 @@ class TextbookStyleCourseMaterialsGenerator:
                 "estimated_reading_time": "45-60 minutes",
                 "word_count_estimate": "8000-12000 words",
                 "complexity_level": self.audience_type,
+                "content_tone": content_tone,  # NEW: Track tone
                 "prerequisite_knowledge": self._determine_prerequisites(module_idx),
                 "learning_path": self._create_learning_path(module)
             },
@@ -330,16 +440,18 @@ class TextbookStyleCourseMaterialsGenerator:
                 "module_title": module_title,
                 "generated_date": datetime.now().strftime("%B %d, %Y at %H:%M"),
                 "detail_level": detail_level,
-                "content_type": "comprehensive_textbook_chapter"
+                "content_type": "comprehensive_textbook_chapter",
+                "content_tone": content_tone  # NEW: Store tone
             }
         }
         
         return comprehensive_content
     
     def generate_real_assessments(self, module_idx: int, detail_level: str = "comprehensive", 
-                                 module_content: Dict[str, Any] = None) -> Dict[str, Any]:
+                                 module_content: Dict[str, Any] = None, content_tone: str = "default",
+                                 additional_notes: str = "") -> Dict[str, Any]:
         """
-        Generate real assessment questions based on actual module content.
+        Generate real assessment questions based on actual module content with specified tone.
         """
         if module_idx < 1 or module_idx > len(self.modules):
             return {"error": "Invalid module index"}
@@ -355,16 +467,27 @@ class TextbookStyleCourseMaterialsGenerator:
             # If no content provided, get task analysis content
             content_text = self._extract_task_content_for_module(module_idx)
         
+        # Get tone instructions
+        tone_instructions = self.get_tone_instructions(content_tone)                               
         client = GroqClient()
         
         # Generate assessment questions based on actual content
         assessment_prompt = f"""
         You are creating REAL assessment questions based on the ACTUAL CONTENT of Module {module_idx}: {module_title}.
         
+        {tone_instructions}
+        
+        IMPORTANT: While maintaining assessment rigor and accuracy, apply the specified tone to:
+        - Question instructions and explanations
+        - Feedback and answer explanations
+        - Encouraging messages and tips
+        - Assessment introductions and conclusions                                                                                                                                 
         Here is the ACTUAL MODULE CONTENT that students will have learned:
         
         {content_text}
         
+        ADDITIONAL REQUIREMENTS:
+        {additional_notes if additional_notes else "No additional requirements specified."}                                                                                              
         Based on this SPECIFIC CONTENT, create comprehensive assessments that test students on what they actually learned in this module.
         
         ## Comprehensive Assessment Suite for Module {module_idx}: {module_title}
@@ -514,6 +637,7 @@ class TextbookStyleCourseMaterialsGenerator:
         5. Cover ALL major topics discussed in the module content
         6. Provide complete, detailed answer keys
         7. Make questions specific and relevant to the course topic: {self.course_topic}
+        8. Apply {content_tone} tone consistently in all instructions and feedback while maintaining assessment integrity
         """
         
         assessments_response = client.generate(assessment_prompt)
@@ -523,13 +647,14 @@ class TextbookStyleCourseMaterialsGenerator:
         Based on the same module content for Module {module_idx}: {module_title}, create 10 additional practice questions 
         with complete answers that students can use for self-study.
         
+        {tone_instructions}   
         These should be similar in style to the assessment questions but focus on reinforcing key concepts.
         Each question should include:
-        - The question
+        - The question (presented in {content_tone} tone)
         - Multiple choice options (if applicable)
-        - Complete correct answer with explanation
+        - Complete correct answer with explanation (in {content_tone} tone)
         - Reference to specific module content
-        - Study tip related to the concept
+        - Study tip related to the concept (in {content_tone} tone)
         
         Format as:
         
@@ -538,9 +663,9 @@ class TextbookStyleCourseMaterialsGenerator:
         **Practice Question 1:**
         [Question based on module content]
         
-        **Answer:** [Complete answer with explanation]
+        **Answer:** [Complete answer with explanation in {content_tone} tone]
         **Content Reference:** [Specific section of module content]
-        **Study Tip:** [Helpful tip for remembering this concept]
+        **Study Tip:** [Helpful tip for remembering this concept in {content_tone} tone]
         
         [Continue for all 10 questions, covering different aspects of the module content]
         """
@@ -552,6 +677,7 @@ class TextbookStyleCourseMaterialsGenerator:
             "practice_questions": practice_response,
             "assessment_overview": {
                 "total_questions": "35-45 assessment questions + 10 practice questions",
+                "content_tone": content_tone,  # NEW: Track tone                             
                 "question_types": [
                     "Multiple Choice (8-10 questions)",
                     "True/False (5-6 questions)",
@@ -567,7 +693,8 @@ class TextbookStyleCourseMaterialsGenerator:
                     "Content references for each question",
                     "Practical application project",
                     "Self-assessment tools",
-                    "Grading rubrics included"
+                    "Grading rubrics included",
+                    f"All instructions in {content_tone} tone"
                 ],
                 "estimated_assessment_time": "2-3 hours for full assessment suite"
             },
@@ -577,13 +704,15 @@ class TextbookStyleCourseMaterialsGenerator:
                 "generated_date": datetime.now().strftime("%B %d, %Y at %H:%M"),
                 "detail_level": detail_level,
                 "assessment_type": "content_based_real_questions",
+                "content_tone": content_tone,  # NEW: Store tone           
                 "content_based": True
             }
         }
     
-    def generate_detailed_lesson_plan(self, module_idx: int, detail_level: str = "comprehensive") -> Dict[str, Any]:
+    def generate_detailed_lesson_plan(self, module_idx: int, detail_level: str = "comprehensive",
+                                    content_tone: str = "default", additional_notes: str = "") -> Dict[str, Any]:
         """
-        Generate a detailed lesson plan for comprehensive content delivery.
+        Generate a detailed lesson plan for comprehensive content delivery with specified tone.
         """
         if module_idx < 1 or module_idx > len(self.modules):
             return {"error": "Invalid module index"}
@@ -591,19 +720,30 @@ class TextbookStyleCourseMaterialsGenerator:
         module = self.modules[module_idx - 1]
         module_title = module.get("title", f"Module {module_idx}")
         
+        tone_instructions = self.get_tone_instructions(content_tone)                                                                      
         client = GroqClient()
         
         prompt = f"""
         Create a comprehensive lesson plan for delivering the extensive content of Module {module_idx}: {module_title}.
         
+        {tone_instructions}
+        
+        IMPORTANT: Incorporate the specified tone into:
+        - Instructor guidance and facilitation notes
+        - Student interaction suggestions
+        - Activity descriptions and instructions
+        - Assessment and feedback approaches                                  
         This lesson plan should accommodate the delivery of rich, textbook-style content to {self.audience_type} level learners.
         
+        ADDITIONAL REQUIREMENTS:
+        {additional_notes if additional_notes else "No additional requirements specified."}                    
         ## Comprehensive Lesson Plan: {module_title}
         
         ### Session Overview
         - **Duration**: 3-4 hours (with breaks) or split into 2-3 shorter sessions
         - **Format**: Interactive lecture with extensive engagement
         - **Materials**: Comprehensive content, multimedia, hands-on materials
+        - **Tone Style**: {content_tone} - maintain consistently throughout session
         
         ### Pre-Session Preparation (60-90 minutes)
         
@@ -613,9 +753,10 @@ class TextbookStyleCourseMaterialsGenerator:
         - Set up interactive elements
         - Prepare handouts and materials
         - Test all technology
+        - Practice {content_tone} tone delivery style
         
         #### Student Preparation
-        - Pre-reading assignments
+        - Pre-reading assignments (with {content_tone} tone instructions)
         - Prerequisite knowledge check
         - Preparation materials to review
         
@@ -623,12 +764,12 @@ class TextbookStyleCourseMaterialsGenerator:
         
         #### Opening Phase (20-30 minutes)
         1. **Welcome and Objectives** (5 minutes)
-           - Clear learning outcomes
+           - Clear learning outcomes (presented in {content_tone} tone)
            - Session roadmap
            - Expectation setting
         
         2. **Engagement Hook** (10-15 minutes)
-           - Real-world scenario or case
+           - Real-world scenario or case (delivered in {content_tone} tone)
            - Interactive discussion
            - Problem-based opener
         
@@ -640,7 +781,7 @@ class TextbookStyleCourseMaterialsGenerator:
         #### Core Content Delivery (120-150 minutes)
         
         **Segment 1: Foundational Concepts** (40-50 minutes)
-        - Detailed content delivery method
+        - Detailed content delivery method (using {content_tone} tone)
         - Interactive elements every 10-15 minutes
         - Visual aids and demonstrations
         - Check for understanding
@@ -649,7 +790,7 @@ class TextbookStyleCourseMaterialsGenerator:
         **Break** (10-15 minutes)
         
         **Segment 2: Advanced Applications** (40-50 minutes)
-        - Case study analysis
+        - Case study analysis (presented in {content_tone} tone)
         - Hands-on exercises
         - Group work and discussions
         - Problem-solving activities
@@ -657,7 +798,7 @@ class TextbookStyleCourseMaterialsGenerator:
         **Break** (10-15 minutes)
         
         **Segment 3: Practical Implementation** (40-50 minutes)
-        - Real-world applications
+        - Real-world applications (explained in {content_tone} tone)
         - Tool demonstrations
         - Practice opportunities
         - Skill development activities
@@ -666,7 +807,7 @@ class TextbookStyleCourseMaterialsGenerator:
         1. **Synthesis Activities** (15-20 minutes)
            - Concept mapping
            - Summary creation
-           - Peer teaching
+           - Peer teaching (using {content_tone} tone)
         
         2. **Formative Assessment** (10-15 minutes)
            - Quick comprehension checks
@@ -674,7 +815,7 @@ class TextbookStyleCourseMaterialsGenerator:
            - Self-assessment tools
         
         3. **Wrap-up and Preview** (5-10 minutes)
-           - Key takeaways summary
+           - Key takeaways summary (in {content_tone} tone)
            - Next session preview
            - Assignment of follow-up work
         
@@ -686,8 +827,9 @@ class TextbookStyleCourseMaterialsGenerator:
         - **Multimodal**: Use visual, auditory, and kinesthetic approaches
         - **Interactive**: Engage every 10-15 minutes
         - **Contextual**: Provide real-world connections
+        - **Tone Consistency**: Maintain {content_tone} tone throughout                                                               
         
-        #### Engagement Strategies
+        #### Engagement Strategies (in {content_tone} tone)
         - Think-pair-share activities
         - Polling and voting
         - Breakout discussions
@@ -697,7 +839,7 @@ class TextbookStyleCourseMaterialsGenerator:
         
         ### Assessment Integration
         
-        #### Continuous Assessment
+        #### Continuous Assessment (using {content_tone} tone for feedback)
         - Exit tickets after each segment
         - Real-time polling
         - Observation checklists
@@ -711,13 +853,13 @@ class TextbookStyleCourseMaterialsGenerator:
         ### Differentiation Strategies
         
         #### For Advanced Learners
-        - Extension activities
+        - Extension activities (presented in {content_tone} tone)
         - Leadership roles
         - Additional challenges
         - Independent projects
         
         #### For Struggling Learners
-        - Additional support materials
+        - Additional support materials (in {content_tone} tone)
         - Peer partnerships
         - Simplified explanations
         - Extra practice time
@@ -749,12 +891,19 @@ class TextbookStyleCourseMaterialsGenerator:
         [Essential elements if time is limited]
         
         ### Follow-up Activities
-        - Homework assignments
+        - Homework assignments (instructions in {content_tone} tone)
         - Independent study guides
         - Peer collaboration projects
         - Real-world application tasks
         
-        Create a lesson plan that can effectively deliver comprehensive, textbook-level content while maintaining high engagement.
+        ### Tone Implementation Guide for Instructors
+        
+        #### Maintaining {content_tone.title()} Tone
+        - Specific phrases and language patterns to use
+        - Examples of appropriate explanations in this tone
+        - Student interaction strategies that support the tone
+        - Methods for providing encouraging feedback                                             
+        Create a lesson plan that can effectively deliver comprehensive, textbook-level content while maintaining high engagement and the {content_tone} tone consistently.
         """
         
         lesson_plan_response = client.generate(prompt)
@@ -766,14 +915,16 @@ class TextbookStyleCourseMaterialsGenerator:
                 "module_title": module_title,
                 "generated_date": datetime.now().strftime("%B %d, %Y at %H:%M"),
                 "detail_level": detail_level,
+                "content_tone": content_tone,  # NEW: Store tone                                                                                     
                 "session_duration": "3-4 hours or multiple shorter sessions",
                 "preparation_time": "60-90 minutes"
             }
         }
     
-    def generate_comprehensive_activities(self, module_idx: int, detail_level: str = "comprehensive") -> Dict[str, Any]:
+    def generate_comprehensive_activities(self, module_idx: int, detail_level: str = "comprehensive",
+                                        content_tone: str = "default", additional_notes: str = "") -> Dict[str, Any]:
         """
-        Generate extensive learning activities for comprehensive content.
+        Generate extensive learning activities for comprehensive content with specified tone.
         """
         if module_idx < 1 or module_idx > len(self.modules):
             return {"error": "Invalid module index"}
@@ -781,13 +932,23 @@ class TextbookStyleCourseMaterialsGenerator:
         module = self.modules[module_idx - 1]
         module_title = module.get("title", f"Module {module_idx}")
         
+        tone_instructions = self.get_tone_instructions(content_tone)                   
         client = GroqClient()
         
         prompt = f"""
         Create a comprehensive collection of learning activities for Module {module_idx}: {module_title}.
         
+        {tone_instructions}
+        
+        IMPORTANT: Apply the specified tone to:
+        - Activity instructions and descriptions
+        - Facilitation guidance
+        - Student interaction prompts
+        - Assessment criteria and feedback
         These activities should support the delivery and reinforcement of extensive, textbook-style content.
         
+        ADDITIONAL REQUIREMENTS:
+        {additional_notes if additional_notes else "No additional requirements specified."}                                             
         Generate 8-12 diverse activities that include:
         
         ### Category 1: Content Engagement Activities (2-3 activities)
@@ -795,7 +956,7 @@ class TextbookStyleCourseMaterialsGenerator:
         #### Activity: Interactive Content Exploration
         - **Type**: Guided Discovery
         - **Duration**: 25-30 minutes
-        - **Purpose**: Deep engagement with core concepts
+        - **Purpose**: Deep engagement with core concepts (explained in {content_tone} tone)
         - **Materials**: Content chunks, exploration guides
         - **Process**: 
           1. Divide content into exploration stations
@@ -805,13 +966,14 @@ class TextbookStyleCourseMaterialsGenerator:
           5. Synthesis discussion at the end
         - **Assessment**: Concept mapping completion
         - **Technology**: QR codes for multimedia content
+        - **Instructor Notes**: [Guidance for maintaining {content_tone} tone during facilitation]                              
         
         ### Category 2: Application Activities (3-4 activities)
         
         #### Activity: Real-World Case Analysis
         - **Type**: Case Study Analysis
         - **Duration**: 45-60 minutes
-        - **Purpose**: Apply concepts to authentic scenarios
+        - **Purpose**: Apply concepts to authentic scenarios  (presented in {content_tone} tone)
         - **Materials**: Detailed case studies, analysis frameworks
         - **Process**:
           1. Present complex, multi-faceted case
@@ -821,45 +983,48 @@ class TextbookStyleCourseMaterialsGenerator:
           5. Present findings to class
         - **Assessment**: Solution quality and reasoning
         - **Extensions**: Additional cases, alternative solutions
+        - **Tone Integration**: [Specific ways to maintain {content_tone} throughout activity]
         
         ### Category 3: Collaborative Learning Activities (2-3 activities)
         
         #### Activity: Expert Groups and Teaching
         - **Type**: Jigsaw Method
         - **Duration**: 50-70 minutes
-        - **Purpose**: Deep learning through teaching others
+        - **Purpose**: Deep learning through teaching others (facilitated in {content_tone} tone)
         - **Materials**: Expert topic assignments, teaching resources
         - **Process**:
           1. Assign expert topics to groups
           2. Expert groups master their topic
           3. Prepare teaching materials
-          4. Teach other groups their topic
+          4. Teach other groups their topic (using {content_tone} approach)
           5. All groups learn about all topics
         - **Assessment**: Teaching effectiveness and peer learning
         - **Technology**: Collaborative digital tools
+        - **Tone Guidelines**: [How to encourage students to use {content_tone} in their teaching]                                            
         
         ### Category 4: Skill Development Activities (2-3 activities)
         
         #### Activity: Progressive Skill Building
         - **Type**: Scaffolded Practice
         - **Duration**: 40-60 minutes
-        - **Purpose**: Build competency in key skills
+        - **Purpose**: Build competency in key skills (guided with {content_tone} support)
         - **Materials**: Practice scenarios, skill checklists
         - **Process**:
           1. Demonstrate skill components
-          2. Guided practice with feedback
+          2. Guided practice with feedback (in {content_tone} tone)
           3. Independent practice
           4. Peer review and feedback
           5. Skill demonstration
         - **Assessment**: Skill demonstration rubric
         - **Differentiation**: Multiple difficulty levels
+        - **Encouragement Strategies**: [Ways to provide {content_tone} feedback and support]                                                            
         
         ### Category 5: Creative and Critical Thinking Activities (1-2 activities)
         
         #### Activity: Innovation Challenge
         - **Type**: Design Thinking
         - **Duration**: 60-90 minutes
-        - **Purpose**: Creative application of concepts
+        - **Purpose**: Creative application of concepts (facilitated in {content_tone} tone)
         - **Materials**: Design thinking templates, prototyping materials
         - **Process**:
           1. Present innovation challenge
@@ -869,12 +1034,13 @@ class TextbookStyleCourseMaterialsGenerator:
           5. Present innovations
         - **Assessment**: Innovation quality and concept integration
         - **Extensions**: Implementation planning
+        - **Motivation Techniques**: [How to inspire creativity using {content_tone} approach]                                                                
         
         For each activity, provide:
         
         ### Detailed Implementation Guide
         - Pre-activity setup
-        - Step-by-step facilitation
+        - Step-by-step facilitation (maintaining {content_tone} tone)
         - Timing for each phase
         - Materials checklist
         - Technology requirements
@@ -883,8 +1049,8 @@ class TextbookStyleCourseMaterialsGenerator:
         - Variations and extensions
         
         ### Differentiation Options
-        - Advanced learner challenges
-        - Support for struggling learners
+        - Advanced learner challenges (presented in {content_tone} tone)
+        - Support for struggling learners (using {content_tone} encouragement)
         - Cultural adaptations
         - Technology alternatives
         
@@ -894,7 +1060,12 @@ class TextbookStyleCourseMaterialsGenerator:
         - Connection to other activities
         - Assessment alignment
         
-        Create activities that are engaging, educationally sound, and appropriate for {self.audience_type} learners dealing with comprehensive content.
+        ### Tone Implementation Strategies
+        - Specific language patterns for {content_tone} facilitation
+        - Ways to encourage student engagement within the tone framework
+        - Methods for providing tone-appropriate feedback
+        - Techniques for maintaining tone consistency throughout activities                                                        
+        Create activities that are engaging, educationally sound, and appropriate for {self.audience_type} learners dealing with comprehensive content, all delivered in the {content_tone} tone.
         """
         
         activities_response = client.generate(prompt)
@@ -903,6 +1074,7 @@ class TextbookStyleCourseMaterialsGenerator:
             "comprehensive_activities": activities_response,
             "activity_overview": {
                 "total_activities": "8-12 diverse activities",
+                "content_tone": content_tone,  # NEW: Track tone
                 "categories": [
                     "Content Engagement",
                     "Application",
@@ -911,20 +1083,22 @@ class TextbookStyleCourseMaterialsGenerator:
                     "Creative and Critical Thinking"
                 ],
                 "estimated_total_time": "4-6 hours",
-                "recommended_usage": "Select 3-5 activities per session based on learning objectives"
+                "recommended_usage": "Select 3-5 activities per session based on learning objectives","tone_integration": f"All activities designed with {content_tone} tone facilitation"
             },
             "metadata": {
                 "module_number": module_idx,
                 "module_title": module_title,
                 "generated_date": datetime.now().strftime("%B %d, %Y at %H:%M"),
                 "detail_level": detail_level,
+                "content_tone": content_tone,  # NEW: Store tone
                 "activity_complexity": "comprehensive"
             }
         }
     
-    def generate_comprehensive_instructor_guide(self, module_idx: int, detail_level: str = "comprehensive") -> Dict[str, Any]:
+    def generate_comprehensive_instructor_guide(self, module_idx: int, detail_level: str = "comprehensive",
+                                              content_tone: str = "default", additional_notes: str = "") -> Dict[str, Any]:
         """
-        Generate detailed instructor guide for comprehensive content delivery.
+        Generate detailed instructor guide for comprehensive content delivery with tone implementation.
         """
         if module_idx < 1 or module_idx > len(self.modules):
             return {"error": "Invalid module index"}
@@ -932,13 +1106,23 @@ class TextbookStyleCourseMaterialsGenerator:
         module = self.modules[module_idx - 1]
         module_title = module.get("title", f"Module {module_idx}")
         
+        tone_instructions = self.get_tone_instructions(content_tone)                                                 
         client = GroqClient()
         
         prompt = f"""
         Create a comprehensive instructor guide for delivering extensive, textbook-style content for Module {module_idx}: {module_title}.
         
+        {tone_instructions}
+        
+        IMPORTANT: This guide should help instructors effectively deliver content in the {content_tone} tone by providing:
+        - Specific guidance on maintaining the tone throughout instruction
+        - Examples of how to present content in the specified tone
+        - Strategies for encouraging student engagement within the tone framework
+        - Methods for providing feedback and assessment in the specified tone                                                   
         This guide should support instructors in effectively delivering rich, detailed educational content to {self.audience_type} level learners.
         
+        ADDITIONAL REQUIREMENTS:
+        {additional_notes if additional_notes else "No additional requirements specified."}                                          
         ## Comprehensive Instructor Guide: {module_title}
         
         ### Module Overview for Instructors
@@ -948,6 +1132,7 @@ class TextbookStyleCourseMaterialsGenerator:
         - **Reading Time**: 45-60 minutes for students
         - **Teaching Time**: 3-4 hours or multiple sessions
         - **Complexity Level**: {self.audience_type} with comprehensive depth
+         - **Content Tone**: {content_tone} - must be maintained consistently                                          
         - **Prerequisites**: [List essential prerequisite knowledge]
         
         #### Key Teaching Challenges
@@ -956,6 +1141,7 @@ class TextbookStyleCourseMaterialsGenerator:
         - Ensuring deep understanding vs. surface coverage
         - Balancing theory with practical application
         - Accommodating different learning paces
+        - Consistently applying {content_tone} tone throughout instruction                                   
         
         ### Pre-Instruction Preparation (2-3 Hours)
         
@@ -964,58 +1150,96 @@ class TextbookStyleCourseMaterialsGenerator:
            - Read all content materials thoroughly
            - Identify key concepts and relationships
            - Note potential student difficulty areas
-           - Prepare additional examples
+           - Prepare additional examples in {content_tone} style
            - Research current applications
         
-        2. **Instructional Planning** (45-60 minutes)
+        2. **Tone Preparation** (30-45 minutes)
+           - Practice delivering content in {content_tone} tone
+           - Prepare tone-appropriate examples and analogies
+           - Develop {content_tone} feedback strategies
+           - Plan tone-consistent student interactions                                       
+        3. **Instructional Planning** (45-60 minutes)
            - Plan content chunking strategy
            - Design engagement checkpoints
            - Prepare multimedia elements
            - Set up interactive components
            - Plan assessment touchpoints
         
-        3. **Material and Technology Setup** (30-45 minutes)
+        4. **Material and Technology Setup** (30-45 minutes)
            - Test all technology components
            - Prepare handouts and resources
            - Set up learning environment
            - Organize materials for easy access
            - Prepare backup plans
         
+        ### {content_tone.title()} Tone Implementation Guide
+        
+        #### Core Tone Principles for {content_tone.title()} Delivery
+        [Specific guidelines for maintaining {content_tone} tone]
+        
+        #### Language Patterns and Phrases
+        - **Recommended phrases**: [List of {content_tone}-appropriate phrases for instruction]
+        - **Avoid these phrases**: [Language patterns that conflict with {content_tone} tone]
+        - **Transition phrases**: [How to move between topics while maintaining tone]
+        - **Question framing**: [How to ask questions in {content_tone} style]
+        
+        #### Tone-Specific Teaching Strategies
+        
+        **For {content_tone.title()} Tone:**
+        - Content delivery methods that support this tone
+        - Student interaction approaches
+        - Feedback and encouragement strategies
+        - Error correction techniques that maintain tone
+        - Ways to handle difficult or resistant students while staying in tone
+        
+        #### Examples of Tone Implementation
+        
+        **Explaining Complex Concepts in {content_tone.title()} Tone:**
+        [Specific examples of how to explain difficult concepts using {content_tone} approach]
+        
+        **Providing Feedback in {content_tone.title()} Tone:**
+        [Examples of constructive feedback delivery using {content_tone} style]
+        
+        **Encouraging Participation in {content_tone.title()} Tone:**
+        [Strategies for drawing out quiet students using {content_tone} approach]
         ### Content Delivery Strategies
         
         #### Chunking Strategy for Extensive Content
         **Chunk 1: Foundation Building** (45-60 minutes)
         - **Content Focus**: Core concepts and definitions
-        - **Delivery Method**: Interactive lecture with frequent checks
+        - **Delivery Method**: Interactive lecture with frequent checks (in {content_tone} tone)
         - **Engagement**: Every 10-15 minutes
         - **Assessment**: Quick comprehension checks
         - **Transition**: Clear bridge to next chunk
+        - **Tone Application**: [Specific ways to apply {content_tone} in this phase]                                                                             
         
         **Chunk 2: Deep Dive Analysis** (45-60 minutes)
         - **Content Focus**: Detailed explanations and examples
-        - **Delivery Method**: Guided exploration and discussion
+        - **Delivery Method**: Guided exploration and discussion (using {content_tone} facilitation)
         - **Engagement**: Case studies and scenarios
         - **Assessment**: Application exercises
         - **Transition**: Synthesis activity
+        - **Tone Application**: [How to maintain {content_tone} during complex explanations]                                                                                    
         
         **Chunk 3: Practical Application** (45-60 minutes)
         - **Content Focus**: Real-world applications and skills
-        - **Delivery Method**: Hands-on activities and practice
+        - **Delivery Method**: Hands-on activities and practice (with {content_tone} support)
         - **Engagement**: Interactive exercises
         - **Assessment**: Performance demonstrations
         - **Transition**: Integration and summary
+        - **Tone Application**: [Ways to encourage practice using {content_tone} approach]                                                                                  
         
-        #### Engagement Maintenance Strategies
+        #### Engagement Maintenance Strategies (with {content_tone.title()} Tone)
         
         **Every 10-15 Minutes**:
-        - Pose reflection questions
+        - Pose reflection questions (framed in {content_tone} style)
         - Quick pair-share activities
         - Polling or voting
         - Stand and stretch breaks
-        - Concept check quizzes
+        - Concept check quizzes (with {content_tone} feedback)
         
         **Every 30-45 Minutes**:
-        - Major activity or exercise
+        - Major activity or exercise (facilitated in {content_tone} tone)
         - Group discussions
         - Case study analysis
         - Problem-solving scenarios
@@ -1023,17 +1247,17 @@ class TextbookStyleCourseMaterialsGenerator:
         
         **Every 60-90 Minutes**:
         - Formal break (10-15 minutes)
-        - Energy re-engagement activity
+        - Energy re-engagement activity (using {content_tone} motivation)
         - Major transition activity
         - Progress assessment
-        - Goal refocusing
+        - Goal refocusing (with {content_tone} encouragement)
         
         ### Assessment Integration and Management
         
-        #### Real-Time Assessment Strategies
+        #### Real-Time Assessment Strategies (using {content_tone} tone)
         - **Content-Based Questions**: Use actual module content for immediate checks
         - **Application Scenarios**: Test understanding through real examples
-        - **Peer Teaching**: Students explain concepts to each other
+        - **Peer Teaching**: Students explain concepts to each other (using {content_tone} approach)
         - **Quick Quizzes**: 3-5 questions based on just-covered material
         - **Exit Tickets**: Summary of key learnings and questions
         
@@ -1042,7 +1266,7 @@ class TextbookStyleCourseMaterialsGenerator:
         - Quick documentation strategies
         - Student progress monitoring
         - Intervention decision points
-        - Feedback delivery systems
+        - Feedback delivery systems (using {content_tone} approach)
         
         ### Technology Integration Guide
         
@@ -1056,71 +1280,101 @@ class TextbookStyleCourseMaterialsGenerator:
         #### Technology Troubleshooting
         - Common issues and solutions
         - Backup delivery methods
-        - Student technology support
+        - Student technology support (provided in {content_tone} manner)
         - Accessibility considerations
         - Emergency procedures
         
-        ### Student Support Strategies
+        ### Student Support Strategies (using {content_tone.title()} Tone)
         
         #### For Overwhelmed Students
-        - Content chunking reminders
+        - Content chunking reminders (delivered with {content_tone} support)
         - Study strategy guidance
         - Additional support resources
-        - One-on-one check-ins
+        - One-on-one check-ins (using {content_tone} approach)
         - Stress management techniques
         
         #### For Advanced Students
-        - Extension challenges
+        - Extension challenges (presented in {content_tone} tone)
         - Leadership opportunities
         - Independent exploration
         - Peer teaching roles
         - Advanced applications
         
         #### For Struggling Students
-        - Prerequisite review
-        - Simplified explanations
+        - Prerequisite review (with {content_tone} encouragement)
+        - Simplified explanations (maintaining {content_tone} tone)
         - Additional examples
         - Extra practice time
         - Alternative assessments
         
+        ### Tone-Specific Troubleshooting
+        
+        #### When Students Don't Respond to {content_tone.title()} Tone
+        - Alternative approaches while maintaining core tone principles
+        - Ways to adjust tone intensity without losing authenticity
+        - Strategies for different personality types
+        - Cultural sensitivity considerations
+        
+        #### Maintaining Tone During Difficult Moments
+        - Handling student resistance using {content_tone} approach
+        - Dealing with disruptive behavior while staying in character
+        - Managing time pressure without abandoning tone
+        - Handling technical difficulties gracefully                                 
         ### Quality Assurance Checklist
         
         #### Before Each Session
         - [ ] Content thoroughly reviewed
-        - [ ] All materials prepared
+        - [ ] {content_tone.title()} tone examples prepared                                            - [ ] All materials ready
         - [ ] Technology tested
         - [ ] Environment set up
         - [ ] Backup plans ready
+        - [ ] Tone delivery practiced                        
         
         #### During Each Session
+        - [ ] {content_tone.title()} tone maintained consistently                        
         - [ ] Engagement every 10-15 minutes
         - [ ] Regular comprehension checks
         - [ ] Time management monitoring
         - [ ] Student energy assessment
-        - [ ] Adjustment implementation
+        - [ ] Tone-appropriate adjustments implemented
         
         #### After Each Session
-        - [ ] Student feedback collected
+        - [ ] Student feedback collected (using {content_tone} approach)
         - [ ] Assessment data reviewed
         - [ ] Session effectiveness evaluated
+        - [ ] Tone consistency self-assessed                                     
         - [ ] Improvements identified
         - [ ] Next session prepared
         
         ### Assessment Answer Keys and Guidance
         
-        #### Using Real Assessment Questions
+        #### Using Real Assessment Questions with {content_tone.title()} Tone
         - How to integrate content-based questions during instruction
         - Techniques for creating spontaneous questions from content
         - Methods for checking student understanding of specific concepts
-        - Strategies for providing immediate feedback on content mastery
+        - Strategies for providing immediate feedback in {content_tone} style
         
         #### Grading Comprehensive Assessments
         - Guidelines for evaluating content-based responses
         - Rubrics for application and analysis questions
-        - Methods for providing meaningful feedback
+        - Methods for providing meaningful feedback in {content_tone} tone
         - Strategies for identifying and addressing knowledge gaps
         
-        Create an instructor guide that empowers educators to deliver comprehensive, engaging, and effective instruction with extensive content while ensuring real learning occurs.
+        
+        ### Professional Development for {content_tone.title()} Tone Mastery
+        
+        #### Self-Assessment Tools
+        - Tone consistency checklist
+        - Student feedback analysis
+        - Video review techniques
+        - Peer observation forms
+        
+        #### Continuous Improvement
+        - Ways to refine {content_tone} delivery
+        - Student response monitoring
+        - Adaptation strategies
+        - Advanced tone techniques 
+        Create an instructor guide that empowers educators to deliver comprehensive, engaging, and effective instruction with extensive content while maintaining the {content_tone} tone consistently and ensuring real learning occurs.
         """
         
         instructor_guide_response = client.generate(prompt)
@@ -1130,22 +1384,26 @@ class TextbookStyleCourseMaterialsGenerator:
             "guide_overview": {
                 "preparation_time": "2-3 hours",
                 "delivery_time": "3-4 hours or multiple sessions",
+                "content_tone": content_tone,  # NEW: Track tone                            
                 "key_features": [
                     "Content chunking strategies",
                     "Engagement maintenance",
                     "Real-time assessment integration",
                     "Technology support",
                     "Student support strategies",
-                    "Assessment guidance"
+                    "Assessment guidance",
+                    f"Complete {content_tone} tone implementation guide"
                 ],
-                "support_level": "comprehensive"
+                "support_level": "comprehensive",
+                "tone_support": f"Detailed guidance for consistent {content_tone} tone delivery"
             },
             "metadata": {
                 "module_number": module_idx,
                 "module_title": module_title,
                 "generated_date": datetime.now().strftime("%B %d, %Y at %H:%M"),
                 "detail_level": detail_level,
-                "guide_type": "comprehensive_delivery"
+                "content_tone": content_tone,  # NEW: Store tone                             
+                "guide_type": "comprehensive_delivery_with_tone"
             }
         }
     
@@ -1230,25 +1488,29 @@ class TextbookStyleCourseMaterialsGenerator:
         }
 
 
-# Updated helper function
+# Updated helper function with tone support
 def generate_course_materials(design_data: Dict[str, Any], 
                              selected_modules: List[int] = None,
                              components: List[str] = None,
-                             detail_level: str = "comprehensive") -> Dict[str, Any]:
+                             detail_level: str = "comprehensive",
+                             content_tone: str = "default",  # NEW: Tone parameter
+                             additional_notes: str = "") -> Dict[str, Any]:
     """
-    Generate comprehensive, textbook-style course materials with real assessment questions.
+    Generate comprehensive, textbook-style course materials with real assessment questions and tone selection.
     
     Args:
         design_data: Course design data from Phase 2
         selected_modules: List of module indexes to generate materials for
         components: List of component types to generate
         detail_level: Level of detail for generation
+        content_tone: Tone style for content generation ('default', 'optimistic', 'entertaining', 'humanized')
+        additional_notes: Additional requirements or customization notes                                                                           
         
     Returns:
-        Dictionary containing comprehensive generated materials with real assessments
+        Dictionary containing comprehensive generated materials with specified tone
     """
     generator = TextbookStyleCourseMaterialsGenerator(design_data)
-    return generator.generate_all_materials(selected_modules, components, detail_level)
+    return generator.generate_all_materials(selected_modules, components, detail_level, content_tone, additional_notes)
 
 
 # Backward compatibility - keep the original class name as an alias
