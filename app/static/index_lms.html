@@ -1,491 +1,575 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FTV | Financial Integrity (2025)</title>
-    <link
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <style>
-      html,
-      body {
-        height: 100%; /* Important for full height layout */
-        margin: 0;
-        padding: 0;
-        font-family: Arial, sans-serif;
-        background-color: #f0f0f0;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FTV | Financial Integrity (2025)</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="index.css" rel="stylesheet" />
+  <style>
+    html,
+    body {
+      height: 100%;
+      /* Important for full height layout */
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+    }
 
-      .wrapper {
-        height: 100%;
-      }
+    .wrapper {
+      height: 100%;
+    }
 
-      .wrapper main {
-        height: calc(100% - 64px);
-      }
+    .wrapper main {
+      height: calc(100% - 64px);
+    }
 
-      header {
-        background-color: #fff;
-        padding: 15px 20px;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        flex-shrink: 0; /* Prevent header from shrinking */
-      }
-      header h1 {
-        font-size: 1.2em;
-        margin: 0;
-        color: #333;
-      }
-      header .exit-course {
-        border: 1px solid #ccc;
-        padding: 5px 10px;
-        border-radius: 4px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        color: #555;
-        font-size: 0.9em;
-      }
-      header .exit-course span {
-        margin-left: 5px;
-      }
+    header {
+      background-color: #fff;
+      padding: 15px 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      flex-shrink: 0;
+      /* Prevent header from shrinking */
+    }
+    header h1 {
+      font-size: 1.2em;
+      margin: 0;
+      color: #333;
+    }
+    header .exit-course {
+      border: 1px solid #ccc;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      color: #555;
+      font-size: 0.9em;
+    }
+    header .exit-course span {
+      margin-left: 5px;
+    }
 
-      main {
-        display: flex;
-        height: 79vh;
-      }
+    main {
+      display: flex;
+      height: 79vh;
+    }
 
-      .main-left-panel {
-        flex: 0 0 20%; /* 25% width, non-shrinkable, non-growable */
-        background-color: #333;
-        color: #fff;
-        padding: 10px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        overflow-y: auto; /* Allow scrolling if content exceeds height */
-      }
-      .main-left-panel h2 {
-        font-size: 1.2em;
-        margin-bottom: 20px;
-      }
-      .main-left-panel ul {
-        list-style: none;
-        padding: 0;
-        margin-top: 10px; /* Add some space below title */
-      }
-      .main-left-panel ul li {
-        margin-bottom: 10px;
-        cursor: pointer;
-        padding: 6px 8px;
-        border-radius: 4px;
-        transition: background-color 0.3s ease;
-      }
-      .main-left-panel ul li:hover {
-        background-color: #555;
-      }
-      .main-left-panel ul li.active {
-        background-color: #007bff; /* Example active color */
-      }
+    .main-left-panel {
+      flex: 0 0 24%;
+      /* 25% width, non-shrinkable, non-growable */
+      background-color: #333;
+      color: #fff;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-y: auto;
+      /* Allow scrolling if content exceeds height */
+    }
+    .main-left-panel h2 {
+      font-size: 1.2em;
+      margin-bottom: 20px;
+    }
+    .main-left-panel ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 10px;
+      /* Add some space below title */
+    }
+    .main-left-panel ul li {
+      margin-bottom: 10px;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 4px;
+      transition: background-color 0.3s ease;
+    }
+    .main-left-panel ul li:hover {
+      background-color: #555;
+    }
+    .main-left-panel ul li.active {
+      background-color: #007bff;
+      /* Example active color */
+    }
 
-      .main-right-panel {
-        flex: 1; /* Take the rest of the space (75%) */
-        padding: 10px;
-        display: flex;
-        flex-direction: column;
-        /* overflow-y: auto;  */
-        background-color: #fff; /* Ensure it has a background */
-      }
+    .main-right-panel {
+      flex: 1;
+      /* Take the rest of the space (75%) */
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      /* overflow-y: auto;  */
+      background-color: #fff;
+      /* Ensure it has a background */
+    }
 
-      .content-area {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
+    .content-area {
+      /*display: flex;*/
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
 
-        padding: 10px 20px;
-        border-radius: 8px;
-        position: relative;
-        flex-grow: 1; /* Allow content area to grow */
-        overflow-y: hidden;
-      }
-      .navigation-arrows {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        padding: 0 10px;
-        box-sizing: border-box;
-        z-index: 2; /* Ensure arrows are above image */
-      }
-      .arrow {
-        font-size: 2em;
-        cursor: pointer;
-        color: #666;
-        background-color: rgba(255, 255, 255, 0.7);
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-      }
-      .image-placeholder {
-        width: 100%;
-        max-width: 800px;
-        height: 400px;
-        background-image: url("https://www.york.ac.uk/media/study-new/postgraduate/researchdegrees/low_Sociology_JohnHoulihan_4180_0847.jpg");
-        background-size: cover;
-        background-position: center;
+      padding: 10px 20px;
+      border-radius: 8px;
+      position: relative;
+      flex-grow: 1;
+      /* Allow content area to grow */
+      overflow-y: scroll;
+    }
+    .navigation-arrows {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 10px;
+      box-sizing: border-box;
+      z-index: 2;
+      /* Ensure arrows are above image */
+    }
+    .arrow {
+      font-size: 2em;
+      cursor: pointer;
+      color: #666;
+      background-color: rgba(255, 255, 255, 0.7);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    }
+    .image-placeholder {
+      width: 100%;
+      max-width: 800px;
+      height: 400px;
+      background-image: url("https://www.york.ac.uk/media/study-new/postgraduate/researchdegrees/low_Sociology_JohnHoulihan_4180_0847.jpg");
+      background-size: cover;
+      background-position: center;
 
-        margin-bottom: 20px;
-        position: relative;
-        z-index: 1;
-      }
-      .character {
-        position: absolute;
-        height: 80%;
-        bottom: 0;
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: bottom;
-      }
-      .character.host {
-        left: 15%;
-        width: 30%;
-        background-image: url("https://via.placeholder.com/200x350?text=Host");
-      }
-      .character.employee {
-        right: 15%;
-        width: 25%;
-        background-image: url("https://via.placeholder.com/150x300?text=Employee");
-      }
-      .text-box {
-        width: 100%;
-        max-width: 800px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        position: relative;
-        z-index: 1;
-      }
-      .text-box strong {
-        color: #007bff;
-      }
-      .navigation-buttons {
-        padding-top: 15px;
-        width: 100%;
-        display: flex;
-        justify-content: end;
-        gap: 16px;
-        border-top: 1px solid lightgrey;
-      }
-      .navigation-buttons button {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 1em;
-        transition: background-color 0.3s ease;
-      }
-      .navigation-buttons button.back {
-        background-color: #ccc;
-        color: #333;
-      }
-      .navigation-buttons button.back:hover {
-        background-color: #bbb;
-      }
-      .navigation-buttons button.next {
-        background-color: #007bff;
-        color: #fff;
-      }
-      .navigation-buttons button.next:hover {
-        background-color: #0056b3;
-      }
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    .character {
+      position: absolute;
+      height: 80%;
+      bottom: 0;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: bottom;
+    }
+    .character.host {
+      left: 15%;
+      width: 30%;
+      background-image: url("https://via.placeholder.com/200x350?text=Host");
+    }
+    .character.employee {
+      right: 15%;
+      width: 25%;
+      background-image: url("https://via.placeholder.com/150x300?text=Employee");
+    }
+    .text-box {
+      width: 100%;
+      max-width: 800px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    .text-box strong {
+      color: #007bff;
+    }
+    .navigation-buttons {
+      padding-top: 15px;
+      width: 100%;
+      display: flex;
+      justify-content: end;
+      gap: 16px;
+      border-top: 1px solid lightgrey;
+    }
+    .navigation-buttons button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+      transition: background-color 0.3s ease;
+    }
+    .navigation-buttons button.back {
+      background-color: #ccc;
+      color: #333;
+    }
+    .navigation-buttons button.back:hover {
+      background-color: #bbb;
+    }
+    .navigation-buttons button.next {
+      background-color: #007bff;
+      color: #fff;
+    }
+    .navigation-buttons button.next:hover {
+      background-color: #0056b3;
+    }
 
-      footer {
-        background-color: #fff;
-        color: #333;
-        padding: 15px 20px;
-        text-align: center;
-        font-size: 0.8em;
-        flex-shrink: 0; /* Prevent footer from shrinking */
-      }
-      footer .bottom-links {
-        display: flex;
-      }
-      footer .bottom-links div {
-        padding: 5px;
-        cursor: pointer;
-      }
+    footer {
+      background-color: #fff;
+      color: #333;
+      padding: 15px 20px;
+      text-align: center;
+      font-size: 0.8em;
+      flex-shrink: 0;
+      /* Prevent footer from shrinking */
+    }
+    footer .bottom-links {
+      display: flex;
+    }
+    footer .bottom-links div {
+      padding: 5px;
+      cursor: pointer;
+    }
 
-      .main-left-panel ul li.topic {
-        font-size: 0.9em;
-        margin-left: 10px;
-        color: #ddd;
-      }
+    .main-left-panel ul li.topic {
+      font-size: 0.9em;
+      margin-left: 10px;
+      color: #ddd;
+    }
 
-      .main-left-panel ul li.topic.active {
-        background-color: #007bff;
-        color: white;
-      }
-      .topic.assessment {
-        background-color: #4a6572;
-        border-left: 3px solid #f9a825;
-      }
+    .main-left-panel ul li.topic.active {
+      background-color: #007bff;
+      color: white;
+    }
+    .topic.assessment {
+      background-color: #4a6572;
+      border-left: 3px solid #f9a825;
+    }
 
-      .topic.assessment.active {
-        background-color: #f9a825;
-        color: #000;
-      }
+    .topic.assessment.active {
+      background-color: #f9a825;
+      color: #000;
+    }
 
-      .topic.assessment:hover {
-        background-color: #5d7c8b;
-      }
-      .assessment-question {
-        max-width: 100%;
-        margin: 0 auto;
-      }
+    .topic.assessment:hover {
+      background-color: #5d7c8b;
+    }
+    .assessment-question {
+      max-width: 100%;
+      margin: 0 auto;
+    }
 
-      .assessment-results {
-        max-width: 600px;
-        margin: 0 auto;
-        text-align: center;
-      }
+    .assessment-results {
+      max-width: 600px;
+      margin: 0 auto;
+      text-align: center;
+    }
 
-      .assessment-results .card {
-        border: none !important;
-        /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); */
-      }
+    .assessment-results .card {
+      border: none !important;
+      /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); */
+    }
 
-      .assessment-question h3 {
-        margin-bottom: 20px;
-        /* font-weight: 600; */
-      }
+    .assessment-question h3 {
+      margin-bottom: 20px;
+      /* font-weight: 600; */
+    }
 
-      .navigation-buttons {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 20px;
-      }
-      #progress-container {
-        width: 100%;
-        height: 10px;
-        background-color: #e0e0e0;
-        border-radius: 10px;
-        overflow: hidden;
-      }
+    .navigation-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+    #progress-container {
+      width: 100%;
+      height: 10px;
+      background-color: #e0e0e0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    #progress-bar {
+      height: 100%;
+      background-color: #4caf50;
+      transition: width 0.5s ease;
+    }
+    .card {
+      border: none;
+    }
+    .card-body {
+      padding: 15px !important;
+    }
+    p {
+      margin-bottom: 8px;
+    }
+    .arrow-icon {
+      transition: transform 0.2s ease;
+    }
+    [aria-expanded="true"] .arrow-icon {
+      transform: rotate(180deg);
+    }
+  </style>
+</head>
 
-      #progress-bar {
-        height: 100%;
-        background-color: #4caf50;
-        transition: width 0.5s ease;
-      }
-      .card {
-        border: none;
-      }
-      .card-body {
-        padding: 15px !important;
-      }
-      p {
-        margin-bottom: 8px;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="wrapper">
-      <header style="height: 64px">
-        <div
-          style="
+					 
+					 
+								  
+									
+	   
+			 
+					 
+	   
+<body>
+								 
+	   
+		 
+						   
+	   
+			
+		 
+		
+  <div class="wrapper">
+    <header style="height: 64px">
+			
+      <div style="
             display: flex;
             justify-content: space-between;
             align-items: center;
             width: 100%;
-          "
-        >
-          <h1 id="course-title" style="flex: 2"></h1>
-          <div
-            style="
+          ">
+		 
+        <h1 id="course-title" style="flex: 2"></h1>
+			  
+        <div style="
               flex-grow: 1;
               margin: 0 0 0 20px;
               display: flex;
               align-items: center;
-            "
-          >
-            <div
-              id="progress-container"
-              style="background: #e0e0e0; border-radius: 10px; height: 10px"
-            >
-              <div
-                id="progress-bar"
-                style="
+            ">
+		   
+				
+									 
+          <div id="progress-container" style="background: #e0e0e0; border-radius: 10px; height: 10px">
+			 
+				  
+            <div id="progress-bar" style="
+					   
                   background: #4caf50;
                   width: 0%;
                   height: 100%;
                   border-radius: 10px;
-                "
-              ></div>
-            </div>
-            <div
-              id="progress-text"
-              style="
+				 
+                "></div>
+          </div>
+				
+          <div id="progress-text" style="
+					 
                 text-align: center;
                 font-size: 12px;
                 margin-top: 5px;
                 width: 120px;
-              "
-            >
-              0% Complete
-            </div>
+              ">
+			 
+            0% Complete
+				  
           </div>
-          <!-- <div class="exit-course">
+        </div>
+        <!-- <div class="exit-course">
             <i class="fas fa-times"></i>
             <span>Exit Course</span>
           </div> -->
-        </div>
-      </header>
-      <main>
-        <div class="main-left-panel">
-          <ul id="topic-list"></ul>
-          <div
-            class="navex-logo"
-            style="
-              font-size: 1em;
+      </div>
+    </header>
+    <main>
+      <div class="main-left-panel">
+        <ul id="topic-list"></ul>
+			  
+        <div class="navex-logo" style="
+				   
+              font-size: 0.5em;
               font-weight: bold;
               text-align: center;
               margin-top: auto;
               border-top: 1px solid lightgrey;
               padding: 17px 0;
-            "
-          >
-            AIDA by Vidyatech <sup>&copy;</sup>
-          </div>
+            ">
+		   
+          AIDA by Vidyatech
+          <br>© Vidyatech Solutions Private Limited
         </div>
+      </div>
 
-        <div class="main-right-panel">
-          <div class="content-area">
-            <div id="course-content" style="width: 100%"></div>
-          </div>
-          <div class="navigation-buttons">
-            <button onclick="prev()" class="btn back btn-light btn-sm">
-              Back
-            </button>
-            <button onclick="next()" class="btn btn-primary btn-sm">
-              Next
-            </button>
-          </div>
+      <div class="main-right-panel">
+        <div class="content-area">
+          <div id="course-content" style="width: 100%"></div>
+				
+										  
+																	   
+				  
+					 
+																	
+				  
+					 
+				
         </div>
-      </main>
-    </div>
+        <div class="navigation-buttons">
+          <button onclick="prev()" class="btn back btn-light btn-sm">
+            Back
+          </button>
+          <button onclick="next()" class="btn btn-primary btn-sm">
+            Next
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="adlwrapper.js"></script>
-    <script src="course.js"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="adlwrapper.js"></script>
+  <script src="course.js"></script>
 
-    <script>
-      function renderSidebar() {
-        const ul = document.getElementById("topic-list");
-        ul.innerHTML = "";
+  <script>
+    function renderSidebar() {
+      const ul = document.getElementById("topic-list");
+      ul.innerHTML = "";
 
-        courseData.forEach((module, modIndex) => {
-          // Module header
-          const moduleHeader = document.createElement("li");
-          moduleHeader.className = "module-header";
-          moduleHeader.innerHTML = `
-      <div class="d-flex justify-content-between align-items-center" 
+      courseData.forEach((module, modIndex) => {
+        // Module header
+        const moduleHeader = document.createElement("li");
+        moduleHeader.className = "module-header";
+        moduleHeader.innerHTML = `
+      <div class="d-flex justify-content-between align-items-center module-toggle" 
            data-toggle="collapse" 
            data-target="#module-${modIndex}" 
            aria-expanded="false">
         ${module.name}
-        <i class="fas fa-chevron-down"></i>
+        <i class="fas fa-chevron-down arrow-icon"></i>
       </div>
     `;
-          ul.appendChild(moduleHeader);
+        ul.appendChild(moduleHeader);
 
-          // Topics container
-          const topicsContainer = document.createElement("div");
-          topicsContainer.id = `module-${modIndex}`;
-          topicsContainer.className = "collapse";
-          topicsContainer.setAttribute("data-parent", "#topic-list");
+        // Topics container
+        const topicsContainer = document.createElement("div");
+        topicsContainer.id = `module-${modIndex}`;
+        topicsContainer.className = "collapse";
+        topicsContainer.setAttribute("data-parent", "#topic-list");
 
-          const topicsList = document.createElement("ul");
-          topicsList.className = "pl-3 mb-2";
+        const topicsList = document.createElement("ul");
+        topicsList.className = "pl-3 mb-2";
 
-          // Regular topics
-          module.content.chapter.topics.forEach((topic, topicIndex) => {
-            const li = document.createElement("li");
-            li.className = "topic";
-            li.textContent = topic.title;
-            li.onclick = () => {
-              loadTopic(modIndex, topicIndex);
-              highlightActiveTopic(modIndex, topicIndex);
-            };
-            li.dataset.module = modIndex;
-            li.dataset.topic = topicIndex;
-            topicsList.appendChild(li);
-          });
+        // Regular topics
+        module.content.chapter.topics.forEach((topic, topicIndex) => {
+          const li = document.createElement("li");
+          li.className = "topic";
+          li.textContent = topic.title;
+          li.onclick = () => {
+            loadTopic(modIndex, topicIndex);
+            highlightActiveTopic(modIndex, topicIndex);
+          };
+          li.dataset.module = modIndex;
+          li.dataset.topic = topicIndex;
+          topicsList.appendChild(li);
+        });
 
-          if (module.assessment) {
-            const assessmentLi = document.createElement("li");
-            assessmentLi.className = "topic assessment";
-            if (
-              currentModuleIndex === modIndex &&
-              currentTopicIndex === "assessment"
-            ) {
-              assessmentLi.classList.add("active");
-            }
-            assessmentLi.innerHTML = `
+        if (module.assessment) {
+          const assessmentLi = document.createElement("li");
+          assessmentLi.className = "topic assessment";
+          if (
+            currentModuleIndex === modIndex &&
+            currentTopicIndex === "assessment"
+          ) {
+            assessmentLi.classList.add("active");
+          }
+          assessmentLi.innerHTML = `
               <i class="fas fa-clipboard-list mr-2"></i>Module Assessment
             `;
-            assessmentLi.onclick = () => {
-              loadAssessment(modIndex);
-            };
-            assessmentLi.dataset.module = modIndex;
-            assessmentLi.dataset.topic = "assessment";
-            topicsList.appendChild(assessmentLi);
-          }
-
-          topicsContainer.appendChild(topicsList);
-          ul.appendChild(topicsContainer);
-        });
-      }
-
-      function highlightActiveTopic(modIndex, topicIndex) {
-        const allTopics = document.querySelectorAll("#topic-list .topic");
-        allTopics.forEach((el) => el.classList.remove("active"));
-
-        const activeEl = [...allTopics].find(
-          (el) =>
-            el.dataset.module == modIndex && el.dataset.topic == topicIndex
-        );
-
-        if (activeEl) {
-          activeEl.classList.add("active");
-          // Expand parent module
-          $(`#module-${modIndex}`).collapse("show");
+          assessmentLi.onclick = () => {
+            loadAssessment(modIndex);
+          };
+          assessmentLi.dataset.module = modIndex;
+          assessmentLi.dataset.topic = "assessment";
+          topicsList.appendChild(assessmentLi);
         }
-      }
 
-      // Hook into course.js's loadAllModules 
-      const originalLoadAllModules = loadAllModules;
-      loadAllModules = async function () {
-        await originalLoadAllModules();
-        renderSidebar();
-      };
-    </script>
-  </body>
-  <div
-    id="loader"
-    style="
+        topicsContainer.appendChild(topicsList);
+        ul.appendChild(topicsContainer);
+      });
+	   
+
+      document.querySelectorAll('.collapse.show').forEach(collapse => {
+        const toggle = document.querySelector(`[data-target="#${collapse.id}"]`);
+        if (toggle) {
+          toggle.setAttribute('aria-expanded', 'true');
+        }
+      });
+    }
+
+    function highlightActiveTopic(modIndex, topicIndex) {
+      const allTopics = document.querySelectorAll("#topic-list .topic");
+      allTopics.forEach((el) => el.classList.remove("active"));
+		  
+
+      const activeEl = [...allTopics].find(
+        (el) =>
+          el.dataset.module == modIndex && el.dataset.topic == topicIndex
+      );
+
+      if (activeEl) {
+        activeEl.classList.add("active");
+        // Expand parent module
+        $(`#module-${modIndex}`).collapse("show");
+		 
+      }
+    }
+
+    // Hook into course.js's loadAllModules 
+    const originalLoadAllModules = loadAllModules;
+    loadAllModules = async function () {
+      await originalLoadAllModules();
+      renderSidebar();
+    };
+  </script>
+  <script>
+    document.querySelectorAll('.module-header').forEach(header => {
+      header.addEventListener('click', function () {
+        const icon = this.querySelector('.arrow-icon');
+        icon.classList.toggle('fa-chevron-down');
+        icon.classList.toggle('fa-chevron-up');
+      });
+    });
+
+    const topics = document.querySelectorAll('.topic');
+    const contentArea = document.querySelector('.content-area');
+
+    topics.forEach(topic => {
+      topic.addEventListener('click', () => {
+        // Wait briefly in case class toggling happens slightly later
+        setTimeout(() => {
+          const isAssessmentActive = document.querySelector('.topic-assessment.active');
+
+          if (isAssessmentActive) {
+            contentArea.style.backgroundImage = "url('images/LeftpaneBg.png')";
+          } else {
+            contentArea.style.backgroundImage = "url('images/RightpaneBg.png')";
+          }
+        }, 50); // small delay to allow class updates
+      });
+    });
+
+  </script>
+
+
+</body>
+<div id="loader" style="
+			   
+		   
       position: fixed;
       top: 0;
       left: 0;
@@ -496,11 +580,11 @@
       display: flex;
       justify-content: center;
       align-items: center;
-    "
-  >
-    <div
-      class="spinner-border text-primary"
-      style="width: 3rem; height: 3rem"
-    ></div>
-  </div>
+    ">
+   
+		
+  <div class="spinner-border text-primary" style="width: 3rem; height: 3rem"></div>
+</div>
+
+		
 </html>
