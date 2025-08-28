@@ -358,6 +358,7 @@ def audience_analysis(analysis_id):
             # Update the analysis data
             analysis_data['terminal_objectives'] = terminal_objectives
             
+            current_app.logger.info("Received terminal objectives for ID: %s", analysis_id)                                                                               
             # Generate task analysis
             task_analysis = generate_task_analysis(
                 analysis_data['course_topic'], 
@@ -370,6 +371,7 @@ def audience_analysis(analysis_id):
             
             # Save updated analysis
             save_analysis(analysis_id, analysis_data)
+            current_app.logger.info("Saved updated analysis with task analysis for ID: %s", analysis_id)                                                                                            
             
             # AnalysisLog.update_by_analysis_id(
             #     analysis_id=analysis_id,
@@ -1091,7 +1093,7 @@ def prepare_materials(analysis_id):
 
 @main.route('/generate_materials/<analysis_id>', methods=['POST'])
 def generate_materials(analysis_id):
-    """Generate course materials based on user selections."""
+    """Generate course materials based on user selections including tone."""
     current_app.logger.info("Material generation initiated for ID: %s", analysis_id)                                                                                
     # Load analysis data
     analysis_data = load_analysis(analysis_id)
@@ -1110,6 +1112,8 @@ def generate_materials(analysis_id):
         detail_level = request.form.get('detail_level', 'comprehensive')
         format_preference = request.form.get('format_preference', 'structured')
         additional_notes = request.form.get('additional_notes', '')
+        # NEW: Get tone selection
+        content_tone = request.form.get('content_tone', 'default')                         
         current_app.logger.debug("Received form data for ID %s: modules=%s, components=%s, detail=%s, format=%s",
                                  analysis_id, selected_modules, components, detail_level, format_preference)
         
@@ -1124,15 +1128,22 @@ def generate_materials(analysis_id):
             flash('Please select at least one component type.')
             return redirect(url_for('main.prepare_materials', analysis_id=analysis_id))
         
+        # Validate tone selection
+        valid_tones = ['default', 'optimistic', 'entertaining', 'humanized']
+        if content_tone not in valid_tones:
+            content_tone = 'default'
+        # selected_modules = [int(m) for m in selected_modules]            
         # Generate materials
-        logger.info(f"Generating materials for modules {selected_modules} with components {components}")
+        logger.info(f"Generating materials for modules {selected_modules} with components {components} in {content_tone} tone")
         current_app.logger.info("Generating materials for ID %s: modules=%s, components=%s",
                                 analysis_id, selected_modules, components)                                                                                    
         
         materials = generate_course_materials(
             analysis_data,
             selected_modules=selected_modules,
-            components=components
+            components=components,
+            content_tone=content_tone,  # NEW: Pass tone parameter
+            additional_notes=additional_notes
         )
         
         # Add metadata
@@ -1142,6 +1153,7 @@ def generate_materials(analysis_id):
             'components_generated': components,
             'detail_level': detail_level,
             'format_preference': format_preference,
+             'content_tone': content_tone,
             'additional_notes': additional_notes
         }
         
@@ -1169,7 +1181,7 @@ def generate_materials(analysis_id):
         save_analysis(analysis_id, analysis_data)
         current_app.logger.info("Successfully generated materials for ID %s: modules=%d, components=%d",
                                 analysis_id, len(selected_modules), len(components))
-        flash(f'Successfully generated {len(components)} component(s) for {len(selected_modules)} module(s)!')
+        flash(f'Successfully generated {len(components)} component(s) for {len(selected_modules)} module(s) in {content_tone} tone!')
         return redirect(url_for('main.view_materials', analysis_id=analysis_id))
         
     except Exception as e:
@@ -1550,9 +1562,18 @@ def download_all_materials(analysis_id):
                 scorm_files = {
                     'index_lms.html': os.path.join(current_app.root_path, 'static', 'index_lms.html'),
                     'course.js': os.path.join(current_app.root_path, 'static', 'js', 'course.js'),
-                    'ADLwrapper.js': os.path.join(current_app.root_path, 'static', 'js', 'ADLwrapper.js')
+                    'ADLwrapper.js': os.path.join(current_app.root_path, 'static', 'js', 'ADLwrapper.js'),
+                    'index.css': os.path.join(current_app.root_path, 'static', 'css', 'index.css')                                 
                 }
                 
+                # Add all files from the images folder
+                images_folder = os.path.join(current_app.root_path, 'static', 'images')
+                for root, dirs, files in os.walk(images_folder):
+                    for file in files:
+                        abs_path = os.path.join(root, file)
+                        # Get relative path inside 'static' to preserve folder structure
+                        rel_path = os.path.relpath(abs_path, os.path.join(current_app.root_path, 'static'))
+                        scorm_files[rel_path] = abs_path                      
                 for arcname, filepath in scorm_files.items():
                     if os.path.exists(filepath):
                         zip_file.write(filepath, arcname)
@@ -1700,8 +1721,19 @@ def download_all_materials(analysis_id):
         flash('Error creating download file.')
         return redirect(url_for('main.view_materials', analysis_id=analysis_id))
 
+import re
 
-def parse_assessment_to_json(assessmentRaw_text):
+
+def format_question_sections(text):
+    """
+    Inserts a newline after any line that starts with a variant of 'Question <number>'
+    (e.g., 'Question1', 'Question  2:', etc.), including optional bullets and punctuation.
+    """
+    question_pattern = r'(^[\*\+\-\s]*\**\s*Question\s*\d+\s*[:\-]?)\s*'
+    text = re.sub(question_pattern, r'\1\n', text, flags=re.IGNORECASE | re.MULTILINE)
+    return text       
+
+def parse_assessment_to_json(assessment_text):
     # Define section assessmentHeadings for the assessment
     assessmentHeadings = [
         "Comprehensive Assessment Suite", "Knowledge Check Questions",
@@ -1712,6 +1744,8 @@ def parse_assessment_to_json(assessmentRaw_text):
         "Self-Assessment Tools","Answer Keys and Explanations","Practice Questions for"
     ]
 
+    single_instance_sections = {"Multiple Choice Questions", "True/False Questions"}
+    assessmentRaw_text = format_question_sections(assessment_text)                                                                                                  
     def asmt_clean_line(line):
         cleaned = re.sub(r'^#+\s*', '', line)
         cleaned = re.sub(r'^[-*+]\s+', '', cleaned)
@@ -1728,6 +1762,7 @@ def parse_assessment_to_json(assessmentRaw_text):
     asmt_parsed_data = {}
     asmt_current_heading = None
     asmt_lowercase_headings = [h.lower() for h in assessmentHeadings]
+    seen_once_set = set()                                                                    
 
     # for line in asmt_cleaned_lines:
     #     if line.lower() in asmt_lowercase_headings:
@@ -1755,7 +1790,11 @@ def parse_assessment_to_json(assessmentRaw_text):
             # Remove parenthetical content for comparison
             asmt_cleaned_lines = re.sub(r'\s*\([^)]*\)', '', line.lower()).strip()
             if asmt_cleaned_lines == h_lower or (h == "Practice Questions for" and line.lower().startswith(h_lower)):
+                if h in single_instance_sections and h in seen_once_set:
+                    matching_heading = None  # Skip duplicate occurrence
+                    break                                                     
                 matching_heading = h
+                seen_once_set.add(h)                                              
                 break
         if matching_heading:
             asmt_current_heading = matching_heading
@@ -1810,7 +1849,7 @@ def parse_assessment_to_json(assessmentRaw_text):
                     questions.append(current_question)
                     current_options = []
                     current_question = {}
-                expect_question_text = True
+                
                 current_question = {
                     "question_number": len(questions) + 1,
                     "question": "",
@@ -1819,11 +1858,14 @@ def parse_assessment_to_json(assessmentRaw_text):
                     "content_reference": "",
                     "learning_objective_tested": ""
                 }
-            elif expect_question_text and line and not line.startswith(("a)", "b)", "c)", "d)", "Correct Answer:", "Content Reference:", "Learning Objective Tested:")):
-                current_question["question"] = line.strip()
-                expect_question_text = False
+                expect_question_text = True
+            #elif expect_question_text and line and not line.startswith(("a)", "b)", "c)", "d)", "Correct Answer:", "Content Reference:", "Learning Objective Tested:")):
+            elif expect_question_text:                          
+                if line.strip():  # Skip blank/empty lines                     
+                    current_question["question"] = line.strip()
+                    expect_question_text = False
             elif line.startswith(("a)", "b)", "c)", "d)")):
-                current_options.append(line)
+                 current_options.append(line.strip())
             elif line.startswith("Correct Answer:"):
                 current_question["correct_answer"] = line.split(":", 1)[1].strip()
             elif line.startswith("Content Reference:"):
@@ -1838,6 +1880,7 @@ def parse_assessment_to_json(assessmentRaw_text):
     def process_true_false(lines):
         questions = []
         current_question = {}
+        expect_question_text = False                            
         for line in lines:
             line = asmt_clean_line(line)
             if line.startswith("Question"):
@@ -1852,10 +1895,10 @@ def parse_assessment_to_json(assessmentRaw_text):
                     "content_reference": "",
                     "learning_objective_tested": ""
                 }
-            elif expect_question_text and line and not line.startswith(("Correct Answer:","Content Reference:", "Learning Objective Tested:")):
-                if line.startswith("True or") or line.startswith("true or"):
-                    currentquestion = line.split(":", 1)[1].strip()
-                    current_question["question"] = currentquestion
+            elif expect_question_text:
+                if line.strip():  # non-empty line just after 'Question'
+                                                                   
+                    current_question["question"] = line.strip()
                     expect_question_text = False
             elif line.startswith("Correct Answer:"):
                 answer = line.split(":", 1)[1].strip()
@@ -1875,6 +1918,7 @@ def parse_assessment_to_json(assessmentRaw_text):
         questions = []
         current_question = {}
         key_points = []
+        expect_question_text = False                              
         for line in lines:
             line = asmt_clean_line(line)
             if line.startswith("Question"):
@@ -1915,6 +1959,7 @@ def parse_assessment_to_json(assessmentRaw_text):
     def process_scenario_based(lines):
         questions = []
         current_question = {}
+        expect_question_text = False                                    
         rubric = {}
         for line in lines:
             line = asmt_clean_line(line)
@@ -1966,6 +2011,7 @@ def parse_assessment_to_json(assessmentRaw_text):
         questions = []
         current_question = {}
         grading_criteria = []
+        expect_question_text = False                                 
         for line in lines:
             line = asmt_clean_line(line)
             if line.startswith("Question"):
@@ -2609,8 +2655,61 @@ def parse_content_to_json_contenttype(md_text):
                 updated_lines[prev_idx] = f"{letter}. {capitalized}"
 
         return updated_lines
-
-
+    def modify_detailed_topic_coverage(standard_json):
+        """
+        Modifies the 'Detailed Topic Coverage' section in the provided JSON by:
+        1. Removing leading alphabets from 'Topic Title' (e.g., 'A.' from 'A. General Content').
+        2. Removing topics with empty values for key fields.
+        Updates the standard_json and returns it.
+        
+        Args:
+            standard_json (dict): The input JSON data containing the 'chapter' and 'Detailed Topic Coverage' keys.
+        
+        Returns:
+            dict: The updated JSON with modified 'Detailed Topic Coverage'.
+        """
+        try:
+            # Access the Detailed Topic Coverage section
+            detailed_topics = standard_json["chapter"]["Detailed Topic Coverage"]
+            
+            # Initialize a new list for modified topics
+            modified_topics = []
+            
+            for topic in detailed_topics:
+                # Check if the topic has non-empty values for key fields
+                is_empty = (
+                    not topic.get("Comprehensive Overview") and
+                    not topic.get("Core Concepts", {}).get("Definition") and
+                    not topic.get("Core Concepts", {}).get("Theoretical Foundation") and
+                    not topic.get("Core Concepts", {}).get("Key Components") and
+                    not topic.get("Core Concepts", {}).get("How It Works") and
+                    not topic.get("Detailed Examples") and
+                    not topic.get("Practical Applications") and
+                    not topic.get("Common Challenges and Solutions") and
+                    not topic.get("Best Practices") and
+                    not topic.get("Integration with Other Concepts")
+                )
+                
+                # Skip topics that are empty
+                if is_empty:
+                    continue
+                    
+                # Remove leading alphabet and period (e.g., 'A.' or 'B.') from Topic Title
+                topic["Topic Title"] = re.sub(r'^[A-Z]\.\s*', '', topic["Topic Title"])
+                
+                # Add the modified topic to the new list
+                modified_topics.append(topic)
+            
+            # Update the standard_json with the modified topics
+            standard_json["chapter"]["Detailed Topic Coverage"] = modified_topics           
+            return standard_json
+        
+        except KeyError as e:
+            print(f"Error: Key {e} not found in JSON structure")
+            return standard_json
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
+            return standard_json                                         
 
     def process_topic_coverage(topic_key, lines, standard_json):
         lines = fix_titles_before_comprehensive(lines)                       
@@ -2752,7 +2851,9 @@ def parse_content_to_json_contenttype(md_text):
         check_missing_values(standard_json)
         if topics == []:
             standard_json = process_topic_coverage_two(topic_key, lines, standard_json)
-        return standard_json
+        updated_json = modify_detailed_topic_coverage(standard_json)
+        return updated_json   
+        #return standard_json
     def check_missing_values(standard_json, parent_key="", chapter_key="chapter"):
         """
         Recursively checks the standard_json for empty or missing values and logs them.
