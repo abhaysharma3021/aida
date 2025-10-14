@@ -1,9 +1,9 @@
 """
-Enhanced Course Materials Generation Module - With Real Assessment Questions AND Tone Selection
+Enhanced Course Materials Generation Module - With Image Integration and Tone Selection
 
 This module generates comprehensive, textbook-style course materials with extensive content,
-detailed explanations, multiple examples, and REAL assessment questions based on actual module content.
-Now includes tone selection for different content styles.                                                      
+detailed explanations, multiple examples, REAL assessment questions, and integrated educational images.
+Maintains all existing functionality while adding professional image integration.
 """
 
 import json
@@ -17,12 +17,13 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Import Groq client
+# Import Groq client and Image Service
 from models.groq_client import GroqClient
+from models.image_service import EducationalImageService, ImageTracker, ImageData                                                                                 
 
-
+                                 
 class TextbookStyleCourseMaterialsGenerator:
-    """Class for generating comprehensive, textbook-style course materials with real assessments and tone selection."""
+    """Class for generating comprehensive, textbook-style course materials with integrated images and tone selection."""
     
     def __init__(self, design_data: Dict[str, Any]):
         """
@@ -40,8 +41,14 @@ class TextbookStyleCourseMaterialsGenerator:
         self.course_topic = design_data.get("course_topic", "")
         self.audience_type = design_data.get("audience_type", "beginner")
         
+        # Initialize image service and tracker
+        self.image_service = EducationalImageService()
+        self.image_tracker = ImageTracker()                                      
         # Extracted data for easy access
         self.modules = self._extract_modules_from_structure()
+        # Image configuration
+        self.images_per_module = 3
+        self.figure_counter = 1  # Global figure counter across all modules
     def get_tone_instructions(self, tone: str) -> str:
         """
         Get specific instructions for the selected tone.
@@ -195,7 +202,7 @@ class TextbookStyleCourseMaterialsGenerator:
         # Fallback: create basic module structure if parsing fails
         if not modules:
             logger.warning("Could not extract modules from course structure. Creating default structure.")
-            task_sections = re.findall(r'[A-Z]\.\s+([^\n]+)', self.task_analysis)
+            task_sections = re.findall(r'[A-Z]\.\s+([^\n]+)', str(self.task_analysis))
             num_modules = len(task_sections) if task_sections else 4
             
             for i in range(num_modules):
@@ -208,6 +215,197 @@ class TextbookStyleCourseMaterialsGenerator:
                 
         return modules
     
+    def _get_image_insertion_points(self, content: str) -> List[Tuple[int, str]]:
+        """
+        Determine strategic points in the content to insert images.
+        
+        Args:
+            content: The markdown content
+            
+        Returns:
+            List of (position, context) tuples for image insertion
+        """
+        # Split content into lines for analysis
+        lines = content.split('\n')
+        insertion_points = []
+        
+        # Find major sections (headers)
+        section_positions = []
+        for i, line in enumerate(lines):
+            if re.match(r'^#{2,4}\s+', line.strip()):
+                section_positions.append((i, line.strip()))
+        
+        if len(section_positions) >= 3:
+            # Strategy: Insert after introduction, middle section, and near end
+            # Point 1: After first major section (introduction)
+            if len(section_positions) > 0:
+                pos = section_positions[0][0] + 3  # 3 lines after header
+                context = "introduction"
+                insertion_points.append((pos, context))
+            
+            # Point 2: Middle section
+            if len(section_positions) > 2:
+                mid_idx = len(section_positions) // 2
+                pos = section_positions[mid_idx][0] + 3
+                context = "middle_content"
+                insertion_points.append((pos, context))
+            
+            # Point 3: Near end but before summary
+            if len(section_positions) > 1:
+                # Insert before last section or 3/4 through content
+                last_section_pos = section_positions[-2][0] if len(section_positions) > 2 else section_positions[-1][0]
+                pos = max(last_section_pos - 5, len(lines) * 3 // 4)
+                context = "advanced_content"
+                insertion_points.append((pos, context))
+        
+        else:
+            # Fallback: distribute evenly through content
+            content_length = len(lines)
+            positions = [
+                (content_length // 4, "introduction"),
+                (content_length // 2, "middle_content"),
+                (content_length * 3 // 4, "advanced_content")
+            ]
+            insertion_points.extend(positions)
+        
+        return insertion_points
+    
+    def _create_image_html(self, image_data: ImageData, figure_num: int, context: str, topic: str) -> str:
+        """
+        Create HTML figure element for an image with proper styling and attribution.
+        
+        Args:
+            image_data: ImageData object containing image information
+            figure_num: Figure number for caption
+            context: Context where image is being inserted
+            topic: Topic for contextual caption
+            
+        Returns:
+            HTML string for the image figure
+        """
+        # Generate contextual caption based on context and topic
+        context_captions = {
+            "introduction": f"Overview of {topic} showing key concepts and applications",
+            "middle_content": f"Detailed view of {topic} implementation and practical examples", 
+            "advanced_content": f"Advanced {topic} techniques and real-world applications"
+        }
+        
+        contextual_caption = context_captions.get(context, f"Educational content related to {topic}")
+        
+        # Use image title if available and relevant, otherwise use contextual caption
+        if image_data.title and len(image_data.title) > 10 and topic.lower() in image_data.title.lower():
+            caption_text = image_data.title
+        else:
+            caption_text = contextual_caption
+        
+        html = f'''
+<div class="textbook-image">
+    <figure class="figure">
+        <img src="{image_data.url}" alt="{image_data.alt_text}" class="figure-img img-fluid rounded" loading="lazy">
+        <figcaption class="figure-caption"><strong>Figure {figure_num}:</strong> {caption_text}</figcaption>
+        <div class="image-attribution"><small>{image_data.attribution}</small></div>
+    </figure>
+</div>
+'''
+        return html
+    
+    def _extract_corrected_course_topic_from_audience_analysis(self) -> str:
+        """
+        Extract the corrected course topic from the audience analysis.
+        Falls back to original course topic if extraction fails.
+        """
+        if not self.audience_analysis:
+            return self.course_topic
+        
+        try:
+            # Look for "Course Topic: [Topic Name]" in the audience analysis
+            import re
+            
+            # Pattern to match "Course Topic: Something" or "* Course Topic: Something"
+            patterns = [
+                r'\*\s*Course Topic:\s*([^\n\r*]+)',  # "* Course Topic: Python Programming"
+                r'Course Topic:\s*([^\n\r*]+)',       # "Course Topic: Python Programming"
+                r'Topic:\s*([^\n\r*]+)'               # Fallback: "Topic: Python Programming"
+            ]
+            
+            for pattern in patterns:
+                match = re.search(pattern, self.audience_analysis, re.IGNORECASE)
+                if match:
+                    corrected_topic = match.group(1).strip()
+                    # Clean up any extra formatting
+                    corrected_topic = re.sub(r'[*\[\]]+', '', corrected_topic).strip()
+                    
+                    if corrected_topic and len(corrected_topic) > 2:
+                        logger.info(f"Extracted corrected course topic: '{corrected_topic}' from audience analysis")
+                        return corrected_topic
+            
+            # If no pattern matches, return original
+            logger.debug("Could not extract corrected course topic from audience analysis, using original")
+            return self.course_topic
+            
+        except Exception as e:
+            logger.warning(f"Error extracting corrected course topic: {e}, using original")
+            return self.course_topic
+                                                                        
+    def _embed_images_in_content(self, content: str, module_number: int, module_title: str) -> str:
+        """
+        Embed images strategically throughout the content.
+        
+        Args:
+            content: The markdown content
+            module_number: Module number for tracking
+            module_title: Module title for image search
+            
+        Returns:
+            Content with embedded images
+        """
+        # Get the corrected course topic from audience analysis
+        corrected_topic = self._extract_corrected_course_topic_from_audience_analysis()
+                                                               
+        # Search for relevant images
+        try:
+            images = self.image_service.search_educational_images(
+                topic= corrected_topic,
+                context="education tutorial learning",
+                count=self.images_per_module,
+                tracker=self.image_tracker
+            )
+            
+            if not images:
+                logger.warning(f"No images found for corrected topic '{corrected_topic}' for Module {module_number}: {module_title}")
+                return content
+            
+            # Track the images for this module
+            for image in images:
+                self.image_tracker.add_image(module_number, image)
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch images for corrected topic '{corrected_topic}' for Module {module_number}: {e}")
+            return content
+        
+        # Find insertion points
+        insertion_points = self._get_image_insertion_points(content)
+        
+        # Split content into lines
+        lines = content.split('\n')
+        
+        # Insert images at strategic points (reverse order to maintain line numbers)
+        for i, (image, (line_pos, context)) in enumerate(zip(images, insertion_points)):
+            if line_pos < len(lines):
+                image_html = self._create_image_html(
+                    image, 
+                    self.figure_counter, 
+                    context, 
+                    module_title
+                )
+                
+                # Insert the image HTML
+                lines.insert(line_pos + i, image_html)
+                self.figure_counter += 1
+                
+                logger.debug(f"Inserted Figure {self.figure_counter - 1} at line {line_pos} for Module {module_number}")
+        
+        return '\n'.join(lines)                                                                             
     def generate_all_materials(self, 
                               selected_modules: List[int] = None, 
                               components: List[str] = None,
@@ -227,6 +425,8 @@ class TextbookStyleCourseMaterialsGenerator:
         valid_tones = ['default', 'optimistic', 'entertaining', 'humanized']
         if content_tone not in valid_tones:
             content_tone = 'default'               
+        # Reset figure counter for this generation
+        self.figure_counter = 1                                          
         materials = {
             "metadata": {
                 "course_topic": self.course_topic,
@@ -236,8 +436,9 @@ class TextbookStyleCourseMaterialsGenerator:
                 "content_tone": content_tone,  # NEW: Store tone in metadata                                  
                 "total_modules": len(self.modules),
                 "generated_modules": len(selected_modules),
-                "style": "comprehensive_textbook",
-                "additional_notes": additional_notes
+                "style": "comprehensive_textbook_with_images",
+                "additional_notes": additional_notes,
+                "images_per_module": self.images_per_module
             },
             "modules": []
         }
@@ -258,7 +459,7 @@ class TextbookStyleCourseMaterialsGenerator:
             # Generate content first (needed for assessments)
             module_content = None
             if "content" in components:
-                logger.info(f"  - Generating comprehensive textbook content in {content_tone} tone...")
+                logger.info(f"  - Generating comprehensive textbook content with embedded images in {content_tone} tone...")
                 module_content = self.generate_comprehensive_content(module_idx, detail_level, content_tone, additional_notes)
                 module_materials["components"]["content"] = module_content
             
@@ -289,7 +490,7 @@ class TextbookStyleCourseMaterialsGenerator:
     def generate_comprehensive_content(self, module_idx: int,  detail_level: str = "comprehensive", 
                                      content_tone: str = "default", additional_notes: str = "") -> Dict[str, Any]:
         """
-        Generate comprehensive, textbook-style instructional content with specified tone.
+        Generate comprehensive, textbook-style instructional content with embedded images.
         """
         if module_idx < 1 or module_idx > len(self.modules):
             return {"error": "Invalid module index"}
@@ -313,6 +514,9 @@ class TextbookStyleCourseMaterialsGenerator:
         {tone_instructions}
         
         IMPORTANT: Apply the tone consistently throughout ALL sections while maintaining educational quality.
+        
+        
+
         
         This should be extensive, detailed educational content similar to what you'd find in a professional textbook,
         but written in the specified tone style.
@@ -346,11 +550,22 @@ class TextbookStyleCourseMaterialsGenerator:
         - Explains the relevance and importance of this topic
         - Previews what will be covered
         - Connects to previous chapters if applicable]
+ 
+
+
+
+
+
+
+
+
+
+ 
         
         ### Detailed Topic Coverage
         
         CRITICAL REQUIREMENT: For EACH topic listed in the module topics ({json.dumps(module.get('topics', []))}), 
-        create a comprehensive section with:
+        create a comprehensive section with clear subsection breaks:
         
         #### [Topic Name from the module topics list]
         
@@ -370,6 +585,11 @@ class TextbookStyleCourseMaterialsGenerator:
         - Example 2: Intermediate/Typical use case  
         - Example 3: Advanced/Complex scenario
         Each example should include setup, process, and outcome]
+                                     
+                                                                                  
+        
+                                             
+                                                                     
         
         **Practical Applications**
         [2-3 paragraphs on real-world applications of this specific topic]
@@ -392,6 +612,7 @@ class TextbookStyleCourseMaterialsGenerator:
         [Step-by-step guide for implementing the concepts learned]
         
         ### Tools and Resources
+                                                          
         
         #### Essential Tools
         [Software, equipment, or resources needed - be specific]
@@ -408,6 +629,13 @@ class TextbookStyleCourseMaterialsGenerator:
         ### Key Terms Glossary
         [All important terms with clear definitions, organized alphabetically]
         
+                                                      
+                                                                                 
+                                                        
+                                                        
+                                                                                   
+                                                                                 
+        
         Make this content:
         - EXTREMELY detailed for each topic listed in the module
         - Each topic section should be 800-1200 words
@@ -417,31 +645,49 @@ class TextbookStyleCourseMaterialsGenerator:
         - Rich with practical applications
         - Professional and authoritative while maintaining the specified tone
         - Engaging and well-structured
+                                                                                     
         
-        TONE CONSISTENCY: Every section, explanation, example, and instruction must consistently reflect the {content_tone} tone while maintaining educational effectiveness.                                                  
+        TONE CONSISTENCY: Every section, explanation, example, and instruction must consistently reflect the {content_tone} tone while maintaining educational effectiveness.
+        
         IMPORTANT: Do not skip any topic from the module topics list. Each topic must have its own comprehensive section.
+        
+        NOTE: Images will be automatically inserted at strategic points in this content, so write flowing, continuous text that can accommodate image integration.
         """
         
         main_content_response = client.generate(main_content_prompt)
         
+        # Embed images in the content
+        content_with_images = self._embed_images_in_content(
+            main_content_response, 
+                                
+                 
+            module_idx, 
+                                      
+                                  
+            module_title
+        )                                                               
         # Return structured content
         comprehensive_content = {
-            "main_content": main_content_response,
+            "main_content": content_with_images,  # Content now has embedded images
             "content_structure": {
                 "estimated_reading_time": "45-60 minutes",
                 "word_count_estimate": "8000-12000 words",
                 "complexity_level": self.audience_type,
-                "content_tone": content_tone,  # NEW: Track tone
+                "content_tone": content_tone,
+ 
                 "prerequisite_knowledge": self._determine_prerequisites(module_idx),
-                "learning_path": self._create_learning_path(module)
+                "learning_path": self._create_learning_path(module),
+                "images_included": self.images_per_module,
+                "figure_numbers": list(range(self.figure_counter - self.images_per_module, self.figure_counter))
             },
             "metadata": {
                 "module_number": module_idx,
                 "module_title": module_title,
                 "generated_date": datetime.now().strftime("%B %d, %Y at %H:%M"),
                 "detail_level": detail_level,
-                "content_type": "comprehensive_textbook_chapter",
-                "content_tone": content_tone  # NEW: Store tone
+                "content_type": "comprehensive_textbook_chapter_with_images",
+                "content_tone": content_tone,
+                "images_embedded": True
             }
         }
         
@@ -627,8 +873,7 @@ class TextbookStyleCourseMaterialsGenerator:
         - Explanation of why it's correct
         - Reference to specific module content
         - Common wrong answers and why they're incorrect
-        - Tips for students who get it wrong
-        
+        - Tips for students who get it wrong                                                                             
         CRITICAL REQUIREMENTS:
         1. ALL questions must be answerable using ONLY the module content provided
         2. ALL answers must reference specific parts of the module content
@@ -720,7 +965,8 @@ class TextbookStyleCourseMaterialsGenerator:
         module = self.modules[module_idx - 1]
         module_title = module.get("title", f"Module {module_idx}")
         
-        tone_instructions = self.get_tone_instructions(content_tone)                                                                      
+        tone_instructions = self.get_tone_instructions(content_tone)
+        
         client = GroqClient()
         
         prompt = f"""
@@ -732,11 +978,13 @@ class TextbookStyleCourseMaterialsGenerator:
         - Instructor guidance and facilitation notes
         - Student interaction suggestions
         - Activity descriptions and instructions
-        - Assessment and feedback approaches                                  
+        - Assessment and feedback approaches
+        
         This lesson plan should accommodate the delivery of rich, textbook-style content to {self.audience_type} level learners.
         
         ADDITIONAL REQUIREMENTS:
-        {additional_notes if additional_notes else "No additional requirements specified."}                    
+        {additional_notes if additional_notes else "No additional requirements specified."}
+        
         ## Comprehensive Lesson Plan: {module_title}
         
         ### Session Overview
@@ -746,6 +994,9 @@ class TextbookStyleCourseMaterialsGenerator:
         - **Tone Style**: {content_tone} - maintain consistently throughout session
         
         ### Pre-Session Preparation (60-90 minutes)
+                                                                
+                                                               
+                                                                             
         
         #### Instructor Preparation
         - Review all chapter content thoroughly
@@ -827,7 +1078,7 @@ class TextbookStyleCourseMaterialsGenerator:
         - **Multimodal**: Use visual, auditory, and kinesthetic approaches
         - **Interactive**: Engage every 10-15 minutes
         - **Contextual**: Provide real-world connections
-        - **Tone Consistency**: Maintain {content_tone} tone throughout                                                               
+        - **Tone Consistency**: Maintain {content_tone} tone throughout
         
         #### Engagement Strategies (in {content_tone} tone)
         - Think-pair-share activities
@@ -902,7 +1153,8 @@ class TextbookStyleCourseMaterialsGenerator:
         - Specific phrases and language patterns to use
         - Examples of appropriate explanations in this tone
         - Student interaction strategies that support the tone
-        - Methods for providing encouraging feedback                                             
+        - Methods for providing encouraging feedback
+        
         Create a lesson plan that can effectively deliver comprehensive, textbook-level content while maintaining high engagement and the {content_tone} tone consistently.
         """
         
@@ -915,9 +1167,10 @@ class TextbookStyleCourseMaterialsGenerator:
                 "module_title": module_title,
                 "generated_date": datetime.now().strftime("%B %d, %Y at %H:%M"),
                 "detail_level": detail_level,
-                "content_tone": content_tone,  # NEW: Store tone                                                                                     
+                "content_tone": content_tone,
                 "session_duration": "3-4 hours or multiple shorter sessions",
                 "preparation_time": "60-90 minutes"
+                                                                                               
             }
         }
     
@@ -932,7 +1185,8 @@ class TextbookStyleCourseMaterialsGenerator:
         module = self.modules[module_idx - 1]
         module_title = module.get("title", f"Module {module_idx}")
         
-        tone_instructions = self.get_tone_instructions(content_tone)                   
+        tone_instructions = self.get_tone_instructions(content_tone)
+        
         client = GroqClient()
         
         prompt = f"""
@@ -945,10 +1199,12 @@ class TextbookStyleCourseMaterialsGenerator:
         - Facilitation guidance
         - Student interaction prompts
         - Assessment criteria and feedback
+        
         These activities should support the delivery and reinforcement of extensive, textbook-style content.
         
         ADDITIONAL REQUIREMENTS:
-        {additional_notes if additional_notes else "No additional requirements specified."}                                             
+        {additional_notes if additional_notes else "No additional requirements specified."}
+        
         Generate 8-12 diverse activities that include:
         
         ### Category 1: Content Engagement Activities (2-3 activities)
@@ -966,14 +1222,14 @@ class TextbookStyleCourseMaterialsGenerator:
           5. Synthesis discussion at the end
         - **Assessment**: Concept mapping completion
         - **Technology**: QR codes for multimedia content
-        - **Instructor Notes**: [Guidance for maintaining {content_tone} tone during facilitation]                              
+        - **Instructor Notes**: [Guidance for maintaining {content_tone} tone during facilitation]
         
         ### Category 2: Application Activities (3-4 activities)
         
         #### Activity: Real-World Case Analysis
         - **Type**: Case Study Analysis
         - **Duration**: 45-60 minutes
-        - **Purpose**: Apply concepts to authentic scenarios  (presented in {content_tone} tone)
+        - **Purpose**: Apply concepts to authentic scenarios (presented in {content_tone} tone)
         - **Materials**: Detailed case studies, analysis frameworks
         - **Process**:
           1. Present complex, multi-faceted case
@@ -1000,7 +1256,7 @@ class TextbookStyleCourseMaterialsGenerator:
           5. All groups learn about all topics
         - **Assessment**: Teaching effectiveness and peer learning
         - **Technology**: Collaborative digital tools
-        - **Tone Guidelines**: [How to encourage students to use {content_tone} in their teaching]                                            
+        - **Tone Guidelines**: [How to encourage students to use {content_tone} in their teaching]
         
         ### Category 4: Skill Development Activities (2-3 activities)
         
@@ -1017,7 +1273,7 @@ class TextbookStyleCourseMaterialsGenerator:
           5. Skill demonstration
         - **Assessment**: Skill demonstration rubric
         - **Differentiation**: Multiple difficulty levels
-        - **Encouragement Strategies**: [Ways to provide {content_tone} feedback and support]                                                            
+        - **Encouragement Strategies**: [Ways to provide {content_tone} feedback and support]
         
         ### Category 5: Creative and Critical Thinking Activities (1-2 activities)
         
@@ -1034,7 +1290,7 @@ class TextbookStyleCourseMaterialsGenerator:
           5. Present innovations
         - **Assessment**: Innovation quality and concept integration
         - **Extensions**: Implementation planning
-        - **Motivation Techniques**: [How to inspire creativity using {content_tone} approach]                                                                
+        - **Motivation Techniques**: [How to inspire creativity using {content_tone} approach]
         
         For each activity, provide:
         
@@ -1064,7 +1320,8 @@ class TextbookStyleCourseMaterialsGenerator:
         - Specific language patterns for {content_tone} facilitation
         - Ways to encourage student engagement within the tone framework
         - Methods for providing tone-appropriate feedback
-        - Techniques for maintaining tone consistency throughout activities                                                        
+        - Techniques for maintaining tone consistency throughout activities
+        
         Create activities that are engaging, educationally sound, and appropriate for {self.audience_type} learners dealing with comprehensive content, all delivered in the {content_tone} tone.
         """
         
@@ -1074,7 +1331,7 @@ class TextbookStyleCourseMaterialsGenerator:
             "comprehensive_activities": activities_response,
             "activity_overview": {
                 "total_activities": "8-12 diverse activities",
-                "content_tone": content_tone,  # NEW: Track tone
+                "content_tone": content_tone,
                 "categories": [
                     "Content Engagement",
                     "Application",
@@ -1083,14 +1340,15 @@ class TextbookStyleCourseMaterialsGenerator:
                     "Creative and Critical Thinking"
                 ],
                 "estimated_total_time": "4-6 hours",
-                "recommended_usage": "Select 3-5 activities per session based on learning objectives","tone_integration": f"All activities designed with {content_tone} tone facilitation"
+                "recommended_usage": "Select 3-5 activities per session based on learning objectives",
+                "tone_integration": f"All activities designed with {content_tone} tone facilitation"
             },
             "metadata": {
                 "module_number": module_idx,
                 "module_title": module_title,
                 "generated_date": datetime.now().strftime("%B %d, %Y at %H:%M"),
                 "detail_level": detail_level,
-                "content_tone": content_tone,  # NEW: Store tone
+                "content_tone": content_tone,
                 "activity_complexity": "comprehensive"
             }
         }
@@ -1106,7 +1364,8 @@ class TextbookStyleCourseMaterialsGenerator:
         module = self.modules[module_idx - 1]
         module_title = module.get("title", f"Module {module_idx}")
         
-        tone_instructions = self.get_tone_instructions(content_tone)                                                 
+        tone_instructions = self.get_tone_instructions(content_tone)
+        
         client = GroqClient()
         
         prompt = f"""
@@ -1118,11 +1377,13 @@ class TextbookStyleCourseMaterialsGenerator:
         - Specific guidance on maintaining the tone throughout instruction
         - Examples of how to present content in the specified tone
         - Strategies for encouraging student engagement within the tone framework
-        - Methods for providing feedback and assessment in the specified tone                                                   
+        - Methods for providing feedback and assessment in the specified tone
+        
         This guide should support instructors in effectively delivering rich, detailed educational content to {self.audience_type} level learners.
         
         ADDITIONAL REQUIREMENTS:
-        {additional_notes if additional_notes else "No additional requirements specified."}                                          
+        {additional_notes if additional_notes else "No additional requirements specified."}
+        
         ## Comprehensive Instructor Guide: {module_title}
         
         ### Module Overview for Instructors
@@ -1132,8 +1393,9 @@ class TextbookStyleCourseMaterialsGenerator:
         - **Reading Time**: 45-60 minutes for students
         - **Teaching Time**: 3-4 hours or multiple sessions
         - **Complexity Level**: {self.audience_type} with comprehensive depth
-         - **Content Tone**: {content_tone} - must be maintained consistently                                          
+        - **Content Tone**: {content_tone} - must be maintained consistently
         - **Prerequisites**: [List essential prerequisite knowledge]
+        - **Integrated Images**: {self.images_per_module} educational images included in content
         
         #### Key Teaching Challenges
         - Managing extensive content without overwhelming students
@@ -1141,7 +1403,8 @@ class TextbookStyleCourseMaterialsGenerator:
         - Ensuring deep understanding vs. surface coverage
         - Balancing theory with practical application
         - Accommodating different learning paces
-        - Consistently applying {content_tone} tone throughout instruction                                   
+        - Consistently applying {content_tone} tone throughout instruction
+        - Effectively using integrated images for enhanced learning
         
         ### Pre-Instruction Preparation (2-3 Hours)
         
@@ -1152,18 +1415,21 @@ class TextbookStyleCourseMaterialsGenerator:
            - Note potential student difficulty areas
            - Prepare additional examples in {content_tone} style
            - Research current applications
+           - Review integrated images and their educational purpose
         
         2. **Tone Preparation** (30-45 minutes)
            - Practice delivering content in {content_tone} tone
            - Prepare tone-appropriate examples and analogies
            - Develop {content_tone} feedback strategies
-           - Plan tone-consistent student interactions                                       
+           - Plan tone-consistent student interactions
+        
         3. **Instructional Planning** (45-60 minutes)
            - Plan content chunking strategy
            - Design engagement checkpoints
            - Prepare multimedia elements
            - Set up interactive components
            - Plan assessment touchpoints
+           - Plan how to reference and discuss integrated images
         
         4. **Material and Technology Setup** (30-45 minutes)
            - Test all technology components
@@ -1171,6 +1437,7 @@ class TextbookStyleCourseMaterialsGenerator:
            - Set up learning environment
            - Organize materials for easy access
            - Prepare backup plans
+           - Ensure image display capabilities
         
         ### {content_tone.title()} Tone Implementation Guide
         
@@ -1202,6 +1469,7 @@ class TextbookStyleCourseMaterialsGenerator:
         
         **Encouraging Participation in {content_tone.title()} Tone:**
         [Strategies for drawing out quiet students using {content_tone} approach]
+        
         ### Content Delivery Strategies
         
         #### Chunking Strategy for Extensive Content
@@ -1211,7 +1479,8 @@ class TextbookStyleCourseMaterialsGenerator:
         - **Engagement**: Every 10-15 minutes
         - **Assessment**: Quick comprehension checks
         - **Transition**: Clear bridge to next chunk
-        - **Tone Application**: [Specific ways to apply {content_tone} in this phase]                                                                             
+        - **Tone Application**: [Specific ways to apply {content_tone} in this phase]
+        - **Image Integration**: Reference Figure 1 to enhance understanding
         
         **Chunk 2: Deep Dive Analysis** (45-60 minutes)
         - **Content Focus**: Detailed explanations and examples
@@ -1219,7 +1488,8 @@ class TextbookStyleCourseMaterialsGenerator:
         - **Engagement**: Case studies and scenarios
         - **Assessment**: Application exercises
         - **Transition**: Synthesis activity
-        - **Tone Application**: [How to maintain {content_tone} during complex explanations]                                                                                    
+        - **Tone Application**: [How to maintain {content_tone} during complex explanations]
+        - **Image Integration**: Use Figure 2 to illustrate key processes
         
         **Chunk 3: Practical Application** (45-60 minutes)
         - **Content Focus**: Real-world applications and skills
@@ -1227,7 +1497,8 @@ class TextbookStyleCourseMaterialsGenerator:
         - **Engagement**: Interactive exercises
         - **Assessment**: Performance demonstrations
         - **Transition**: Integration and summary
-        - **Tone Application**: [Ways to encourage practice using {content_tone} approach]                                                                                  
+        - **Tone Application**: [Ways to encourage practice using {content_tone} approach]
+        - **Image Integration**: Reference Figure 3 for advanced applications
         
         #### Engagement Maintenance Strategies (with {content_tone.title()} Tone)
         
@@ -1237,6 +1508,7 @@ class TextbookStyleCourseMaterialsGenerator:
         - Polling or voting
         - Stand and stretch breaks
         - Concept check quizzes (with {content_tone} feedback)
+        - Reference integrated images for visual reinforcement
         
         **Every 30-45 Minutes**:
         - Major activity or exercise (facilitated in {content_tone} tone)
@@ -1244,6 +1516,7 @@ class TextbookStyleCourseMaterialsGenerator:
         - Case study analysis
         - Problem-solving scenarios
         - Application challenges
+        - Image-based discussions and analysis
         
         **Every 60-90 Minutes**:
         - Formal break (10-15 minutes)
@@ -1251,6 +1524,20 @@ class TextbookStyleCourseMaterialsGenerator:
         - Major transition activity
         - Progress assessment
         - Goal refocusing (with {content_tone} encouragement)
+        
+        ### Image Integration and Utilization
+        
+        #### Effective Use of Integrated Images
+        - **Figure References**: How to naturally reference figures during instruction
+        - **Visual Learning**: Using images to support different learning styles
+        - **Discussion Prompts**: Questions to ask about images to deepen understanding
+        - **Accessibility**: Ensuring image descriptions support all learners
+        
+        #### Image-Based Activities
+        - **Figure Analysis**: Students analyze and discuss what they see
+        - **Concept Mapping**: Connect images to key concepts being taught
+        - **Comparison Activities**: Compare figures to identify patterns
+        - **Real-World Connections**: Link images to student experiences
         
         ### Assessment Integration and Management
         
@@ -1260,6 +1547,7 @@ class TextbookStyleCourseMaterialsGenerator:
         - **Peer Teaching**: Students explain concepts to each other (using {content_tone} approach)
         - **Quick Quizzes**: 3-5 questions based on just-covered material
         - **Exit Tickets**: Summary of key learnings and questions
+        - **Image-Based Questions**: Use integrated figures for visual assessment
         
         #### Assessment Data Management
         - Real-time tracking methods
@@ -1276,6 +1564,7 @@ class TextbookStyleCourseMaterialsGenerator:
         - **Collaboration Platforms**: Group work management
         - **Assessment Tools**: Quick check systems
         - **Multimedia Tools**: Rich content delivery
+        - **Image Display**: High-quality image presentation
         
         #### Technology Troubleshooting
         - Common issues and solutions
@@ -1283,6 +1572,7 @@ class TextbookStyleCourseMaterialsGenerator:
         - Student technology support (provided in {content_tone} manner)
         - Accessibility considerations
         - Emergency procedures
+        - Image display backup plans
         
         ### Student Support Strategies (using {content_tone.title()} Tone)
         
@@ -1292,6 +1582,7 @@ class TextbookStyleCourseMaterialsGenerator:
         - Additional support resources
         - One-on-one check-ins (using {content_tone} approach)
         - Stress management techniques
+        - Visual learning support through images
         
         #### For Advanced Students
         - Extension challenges (presented in {content_tone} tone)
@@ -1299,6 +1590,7 @@ class TextbookStyleCourseMaterialsGenerator:
         - Independent exploration
         - Peer teaching roles
         - Advanced applications
+        - Additional image analysis activities
         
         #### For Struggling Students
         - Prerequisite review (with {content_tone} encouragement)
@@ -1306,6 +1598,7 @@ class TextbookStyleCourseMaterialsGenerator:
         - Additional examples
         - Extra practice time
         - Alternative assessments
+        - Visual learning support through integrated images
         
         ### Tone-Specific Troubleshooting
         
@@ -1319,32 +1612,37 @@ class TextbookStyleCourseMaterialsGenerator:
         - Handling student resistance using {content_tone} approach
         - Dealing with disruptive behavior while staying in character
         - Managing time pressure without abandoning tone
-        - Handling technical difficulties gracefully                                 
+        - Handling technical difficulties gracefully
+        
         ### Quality Assurance Checklist
         
         #### Before Each Session
         - [ ] Content thoroughly reviewed
-        - [ ] {content_tone.title()} tone examples prepared                                            - [ ] All materials ready
+        - [ ] {content_tone.title()} tone examples prepared
+        - [ ] All materials ready
         - [ ] Technology tested
         - [ ] Environment set up
         - [ ] Backup plans ready
-        - [ ] Tone delivery practiced                        
+        - [ ] Tone delivery practiced
+        - [ ] Image display verified
         
         #### During Each Session
-        - [ ] {content_tone.title()} tone maintained consistently                        
+        - [ ] {content_tone.title()} tone maintained consistently
         - [ ] Engagement every 10-15 minutes
         - [ ] Regular comprehension checks
         - [ ] Time management monitoring
         - [ ] Student energy assessment
         - [ ] Tone-appropriate adjustments implemented
+        - [ ] Images referenced effectively
         
         #### After Each Session
         - [ ] Student feedback collected (using {content_tone} approach)
         - [ ] Assessment data reviewed
         - [ ] Session effectiveness evaluated
-        - [ ] Tone consistency self-assessed                                     
+        - [ ] Tone consistency self-assessed
         - [ ] Improvements identified
         - [ ] Next session prepared
+        - [ ] Image effectiveness evaluated
         
         ### Assessment Answer Keys and Guidance
         
@@ -1373,7 +1671,8 @@ class TextbookStyleCourseMaterialsGenerator:
         - Ways to refine {content_tone} delivery
         - Student response monitoring
         - Adaptation strategies
-        - Advanced tone techniques 
+        - Advanced tone techniques
+        
         Create an instructor guide that empowers educators to deliver comprehensive, engaging, and effective instruction with extensive content while maintaining the {content_tone} tone consistently and ensuring real learning occurs.
         """
         
@@ -1384,7 +1683,7 @@ class TextbookStyleCourseMaterialsGenerator:
             "guide_overview": {
                 "preparation_time": "2-3 hours",
                 "delivery_time": "3-4 hours or multiple sessions",
-                "content_tone": content_tone,  # NEW: Track tone                            
+                "content_tone": content_tone,
                 "key_features": [
                     "Content chunking strategies",
                     "Engagement maintenance",
@@ -1392,21 +1691,22 @@ class TextbookStyleCourseMaterialsGenerator:
                     "Technology support",
                     "Student support strategies",
                     "Assessment guidance",
-                    f"Complete {content_tone} tone implementation guide"
+                    f"Complete {content_tone} tone implementation guide",
+                    "Image integration strategies"
                 ],
                 "support_level": "comprehensive",
-                "tone_support": f"Detailed guidance for consistent {content_tone} tone delivery"
+                "tone_support": f"Detailed guidance for consistent {content_tone} tone delivery",
+                "visual_support": "Guidance for effective use of integrated educational images"
             },
             "metadata": {
                 "module_number": module_idx,
                 "module_title": module_title,
                 "generated_date": datetime.now().strftime("%B %d, %Y at %H:%M"),
                 "detail_level": detail_level,
-                "content_tone": content_tone,  # NEW: Store tone                             
-                "guide_type": "comprehensive_delivery_with_tone"
+                "content_tone": content_tone,
+                "guide_type": "comprehensive_delivery_with_tone_and_images"
             }
         }
-    
     def save_materials(self, materials: Dict[str, Any], filepath: str) -> None:
         """
         Save generated materials to a file.
@@ -1488,15 +1788,16 @@ class TextbookStyleCourseMaterialsGenerator:
         }
 
 
-# Updated helper function with tone support
+# Updated helper function with tone and image support
 def generate_course_materials(design_data: Dict[str, Any], 
                              selected_modules: List[int] = None,
                              components: List[str] = None,
                              detail_level: str = "comprehensive",
-                             content_tone: str = "default",  # NEW: Tone parameter
+                             content_tone: str = "default",
                              additional_notes: str = "") -> Dict[str, Any]:
     """
-    Generate comprehensive, textbook-style course materials with real assessment questions and tone selection.
+    Generate comprehensive, textbook-style course materials with real assessment questions, 
+    tone selection, and integrated educational images.
     
     Args:
         design_data: Course design data from Phase 2
@@ -1504,14 +1805,13 @@ def generate_course_materials(design_data: Dict[str, Any],
         components: List of component types to generate
         detail_level: Level of detail for generation
         content_tone: Tone style for content generation ('default', 'optimistic', 'entertaining', 'humanized')
-        additional_notes: Additional requirements or customization notes                                                                           
+        additional_notes: Additional requirements or customization notes
         
     Returns:
-        Dictionary containing comprehensive generated materials with specified tone
+        Dictionary containing comprehensive generated materials with specified tone and images
     """
     generator = TextbookStyleCourseMaterialsGenerator(design_data)
     return generator.generate_all_materials(selected_modules, components, detail_level, content_tone, additional_notes)
-
 
 # Backward compatibility - keep the original class name as an alias
 class CourseMaterialsGenerator(TextbookStyleCourseMaterialsGenerator):
