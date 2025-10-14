@@ -95,19 +95,19 @@
                 <p class="help-text" style="display: none;">Now that you've reviewed the audience analysis, please specify the terminal objectives for this course.</p>
                 
                 <form method="POST">
-                    {{ form.hidden_tag() }}
-                    
+                    <!-- {{ form.hidden_tag() }} -->
+                    <input type="hidden" name="generate_task_analysis" value="true">
                     <div class="form-group" style="display: none;">
                         {{ form.terminal_objectives.label }}
                         <div class="help-text">List the main learning outcomes that students should achieve by the end of the course.</div>
-                        <!-- {{ form.terminal_objectives(class="form-control", rows=5, placeholder="Enter each objective on a new line. Example:\n1. Identify key components of the system\n2. Apply concepts to solve real-world problems\n3. Evaluate the effectiveness of different approaches") }} -->
-                        <textarea 
-						name="{{ form.terminal_objectives.name }}" 
+                      <textarea 
+                        name="{{ form.terminal_objectives.name }}" 
                         id="{{ form.terminal_objectives.id }}" 
                         class="form-control" 
                         rows="5">Null
                     {{ form.terminal_objectives.data or '' }}
-                    </textarea>									   
+                    </textarea>
+
                         {% if form.terminal_objectives.errors %}
                             <div class="error">
                                 {% for error in form.terminal_objectives.errors %}
@@ -118,7 +118,10 @@
                     </div>
                     
                     <div class="form-group">
-                        {{ form.submit(class="btn btn-primary") }}
+                        <!-- {{ form.submit(class="btn btn-primary") }} -->
+						<button type="submit" class="btn btn-primary">
+                            <i class="fas fa-cogs"></i> Generate Task Analysis
+                        </button>													  
                         <div class="processing-notice">This may take a minute to generate the task analysis.</div>
                     </div>
                 </form>
