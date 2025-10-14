@@ -167,6 +167,9 @@ function loadTopic(modIndex, topicIndex) {
     htmlParts.push(`<h2>${topic.title}</h2>`);
   }
 
+	if (topic.Section && topic.Section  !== "") {
+    htmlParts.push(`<div class="topicsimage">${topic.Section}</div>`);
+  }
   // Add overview if valid (not undefined, null, empty string, or empty array)
   if (topic.overview && (Array.isArray(topic.overview) ? topic.overview.length > 0 : topic.overview !== "")) {
     const overviewContent = Array.isArray(topic.overview) ? topic.overview.join(" ") : topic.overview;
