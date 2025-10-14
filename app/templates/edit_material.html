@@ -52,16 +52,16 @@
         <!-- <img src="/static/MS-Learning-icons/icon-link.png" class="fa-solid imgLink" data-action="link" title="Link" style="cursor: pointer;" alt="Link"> -->
         <!-- <img src="/static/MS-Learning-icons/icon-image.png" class="fa-solid imgImage" title="Image" style="cursor: pointer;" alt="Image"> -->
 		<img src="/static/MS-Learning-icons/icon-link.png" class="fa-solid  disabled-imgs" data-action="link" title="This option is currently not supported" alt="Link">
-        <img src="/static/MS-Learning-icons/icon-image.png" class="fa-solid  disabled-imgs" title="This option is currently not supported"  alt="Image">																																									   
+        <img src="/static/MS-Learning-icons/icon-image.png" id="insertImageIcon" title="Image" class="fa-solid" alt="Image">																																									   
         <img id="unorderedListBtn" class="fa-solid" src="/static/MS-Learning-icons/icon-bullet.png" title="Bullets" style="cursor: pointer;" alt="Bullets">
         <img id="orderedListBtn" class="fa-solid" src="/static/MS-Learning-icons/icon-numbering.png" title="Numbering" style="cursor: pointer;" alt="Numbering">
         <img id="increaseIndentBtn" class="fa-solid" src="/static/MS-Learning-icons/icon-indent.png" title="Increase Indent" style="cursor: pointer;" alt="Indent">
         <!-- <img id="ctable" class="fa-solid" src="/static/MS-Learning-icons/icon-table.png" title="Table" style="cursor: pointer;" alt="Table"> -->
 		<img id="" class="fa-solid disabled-imgs" src="/static/MS-Learning-icons/icon-table.png" title="This option is currently not supported" style="cursor: pointer;" alt="Table">																																									   
-		<img src="/static/MS-Learning-icons/new-line.png" id="insertNewlineBtn" title="Format" alt="Format Line" style="cursor: pointer; padding: 10px;">
+		<img src="/static/MS-Learning-icons/new-line.png" id="insertNewlineBtn" class="fa-solid" title="Format" alt="Format Line" style="cursor: pointer; padding: 10px;">
 		
    </div>
-    <div class="imagepopup">
+    <!--<div class="imagepopup">
         <div><p>Enter Image Path:</p></div>
         <input type="text" id="imagelink">
         <div>
@@ -89,8 +89,8 @@
             <i class="fa-solid fa-x" style="position: unset; border: 1px solid #ccc;"></i>
         </div>
         <i class="fa-solid fas fa-x"></i>
-    </div>
-    <textarea class="form-control" id="material_content"  name="material_content" rows="25">{{ material_content}}</textarea>
+    </div>-->
+    <textarea class="form-control" id="material_content"  name="material_content" rows="25">{{ material_content }}</textarea>
      <!-- <textarea class="form-control" id="material_content" name="material_content" rows="25">{{ material_content }}</textarea> -->
     <div id="preview" class="preview"></div>
     <div id="file" class="file"></div>
@@ -166,7 +166,183 @@
     </div>
 </div>
 
+<!-- Insert Image Modal -->
+
+<div id="insertImageModal" class="insert-image-modal">
+  <div class="insert-image-modal-content">
+    <span id="closeInsertImageModal" class="insert-image-close">&times;</span>
+    <h3>Insert Image</h3>
+
+    <label for="insertImageTitle">Image Description:</label>
+    <input type="text" id="insertImageTitle" placeholder="Enter image Description..." />
+
+    <!-- Checkboxes for Local or External -->
+    <div class="insert-image-options">
+      <label>
+        <input type="checkbox" id="localImageCheckbox" checked />
+        Local Image
+      </label>
+      <label>
+        <input type="checkbox" id="externalImageCheckbox" />
+        External Image Link
+      </label>
+    </div>
+
+    <!-- Local file input -->
+    <div id="localImageContainer">
+      <label for="insertImageFile">Select Image:</label>
+      <input type="file" id="insertImageFile" accept="image/*" />
+    </div>
+
+    <!-- External URL input (hidden initially) -->
+    <div id="externalImageContainer" style="display:none;">
+      <label for="insertExternalImageLink">Image URL:</label>
+      <input type="text" id="insertExternalImageLink" placeholder="Enter external image URL..." />
+    </div>
+
+    <div class="insert-image-modal-actions">
+      <button id="insertImageCancelBtn" class="insert-image-cancel">Cancel</button>
+      <button id="insertImageOkBtn" class="insert-image-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Simple loader -->
+<div id="textarealoader">
+     <div class="textareaspinner-wrapper">
+    <div class="textareaspinner"></div>
+     </div>
+   
+   
+</div>
+
+
 <style>
+.insert-image-options {
+  margin-top: 12px;
+}
+
+#textarealoader{
+display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(255, 255, 255, 0.8);
+    z-index:9999;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+
+}
+.textareaspinner{
+
+width:40px; 
+height:40px;
+border:5px solid #ccc;
+border-top-color:#007bff;
+border-radius:50%;
+animation: spin 1s linear infinite;
+margin:auto;
+
+}
+.textareaspinner-wrapper{
+
+     position:absolute;
+        top:calc(50% - 40px);   /* Center vertically (half of spinner height) */
+        left:calc(50% - 40px);  /* Center horizontally (half of spinner width) */
+        text-align:center;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.insert-image-options label {
+  margin-right: 16px;
+  font-weight: 500;
+}
+
+/* === Insert Image Modal === */
+.insert-image-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Modal Content */
+.insert-image-modal-content {
+  background-color: #fff;
+  margin: 10% auto;
+  padding: 20px 30px;
+  border-radius: 12px;
+  width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+/* Close Button */
+.insert-image-close {
+  position: absolute;
+  right: 15px;
+  top: 10px;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+/* Labels & Inputs */
+.insert-image-modal-content label {
+  display: block;
+  margin-top: 12px;
+  font-weight: 500;
+}
+
+.insert-image-modal-content input[type="text"],
+.insert-image-modal-content input[type="file"] {
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+/* Buttons */
+.insert-image-modal-actions {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.insert-image-modal-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.insert-image-cancel {
+  background-color: #ccc;
+  margin-right: 8px;
+}
+
+.insert-image-ok {
+  background-color: #007bff;
+  color: white;
+}
+
+.insert-image-ok:hover {
+  background-color: #0056b3;
+}
+
+
+
+
 .material-preview {
     font-family: Georgia, serif;
     line-height: 1.7;
@@ -209,6 +385,13 @@
     padding: 1rem;
     border-radius: 6px;
     overflow-x: auto;
+}
+textarea#material_content{
+    color: white;
+}
+.color-black{
+color: #212529 !important;
+
 }
 </style>
 <style>
@@ -428,9 +611,11 @@
                               
             }
             .disabled-imgs:hover{
-                background-color: unset !important; 
-								   
-													  
+                background-color: unset !important; 								   													  
+            }
+            div#preview-content img, div#preview img {
+                max-width: 100%;
+                min-width: 35%;
             }
         </style>
 {% endblock %}
@@ -438,7 +623,7 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
-
+ var baseUrl = window.location.origin;
 document.getElementById('material_content').addEventListener('click', function() {
      document.getElementById('headingDropdown').selectedIndex = 0;
 });
@@ -624,7 +809,8 @@ document.getElementById('saveBtn').addEventListener('click', function () {
             html = html.replace(/(\*\*\*(.+?)\*\*\*)/g, "<strong><i>$2</i></strong>");
             html = html.replace(/(\*\*(.+?)\*\*)/g, "<strong>$2</strong>");
             html = html.replace(/(\*(.+?)\*)/g, "<i>$2</i>");
-            html = html.replace(/(\_(.+?)\_)/g, "<u>$2</u>");
+            //html = html.replace(/(\_(.+?)\_)/g, "<u>$2</u>");
+            html.replace(/(?!<[^>]*)(\_(.+?)\_)(?![^<]*>)/g, "<u>$2</u>");
             html = functions.headingTags(html);
             html = functions.backQuote(html);
             html = functions.imageTag(html);
@@ -869,7 +1055,175 @@ document.getElementById('saveBtn').addEventListener('click', function () {
         document.querySelector(".tablepopup").style.display = "none";
         document.querySelector('.overlay').style.display = 'block'; // Show the overlay
     });*/
-    document.querySelector("#savepath").addEventListener("click", () => {
+
+
+    /*const insertimgBtn = document.getElementById("insertImageIcon");
+    var mdeditor = document.getElementById("material_content");
+     // e.g. http://127.0.0.1:5000
+
+    insertimgBtn.addEventListener("click", () => {
+        // Example: template image markdown
+        const template = `![alt text](${baseUrl}/materialimages/image.png "optional title")`;
+
+        // Insert at cursor position
+        const start = mdeditor.selectionStart;
+        const end = mdeditor.selectionEnd;
+        const text = mdeditor.value;
+
+        mdeditor.value = text.substring(0, start) + template + text.substring(end);
+
+        // Move cursor inside "alt text" for convenience
+        mdeditor.selectionStart = mdeditor.selectionEnd = start + 2;
+        mdeditor.focus();
+    });*/
+
+const insertimgBtn = document.getElementById("insertImageIcon");
+const mdeditor = document.getElementById("material_content");
+
+// Modal elements
+const modal = document.getElementById("insertImageModal");
+const closeModal = document.getElementById("closeInsertImageModal");
+const cancelBtn = document.getElementById("insertImageCancelBtn");
+const okBtn = document.getElementById("insertImageOkBtn");
+
+const imageFileInput = document.getElementById("insertImageFile");
+const imageTitleInput = document.getElementById("insertImageTitle");
+const localCheckbox = document.getElementById("localImageCheckbox");
+const externalCheckbox = document.getElementById("externalImageCheckbox");
+const localContainer = document.getElementById("localImageContainer");
+const externalContainer = document.getElementById("externalImageContainer");
+const externalLinkInput = document.getElementById("insertExternalImageLink");
+
+// Show modal
+insertimgBtn.addEventListener("click", () => {
+  modal.style.display = "block";
+  imageTitleInput.value = "";
+  imageFileInput.value = "";
+  externalLinkInput.value = "";
+  localCheckbox.checked = true;
+  externalCheckbox.checked = false;
+  localContainer.style.display = "block";
+  externalContainer.style.display = "none";
+  imageTitleInput.focus();
+});
+
+// Toggle inputs based on checkbox selection
+localCheckbox.addEventListener("change", () => {
+  if (localCheckbox.checked) {
+    localContainer.style.display = "block";
+    externalCheckbox.checked = false;
+    externalContainer.style.display = "none";
+  } else {
+    localContainer.style.display = "none";
+  }
+});
+
+externalCheckbox.addEventListener("change", () => {
+  if (externalCheckbox.checked) {
+    externalContainer.style.display = "block";
+    localCheckbox.checked = false;
+    localContainer.style.display = "none";
+  } else {
+    externalContainer.style.display = "none";
+  }
+});
+
+// Close modal
+function closeImageModal() {
+  modal.style.display = "none";
+}
+closeModal.addEventListener("click", closeImageModal);
+cancelBtn.addEventListener("click", closeImageModal);
+
+okBtn.addEventListener("click", () => {
+  let imageTitle = imageTitleInput.value.trim();
+  const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, "");
+
+  if (localCheckbox.checked) {
+    // Local image path
+    const file = imageFileInput.files[0];
+    if (!file) {
+      alert("Please select a local image file.");
+      return;
+    }
+
+    // Only generate unique name if user left title blank
+    if (!imageTitle) {
+      const baseName = file.name.replace(/\.[^/.]+$/, ""); // original filename
+      imageTitle = `${baseName}`;
+    }
+
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("analysis_id", analysisId);
+    formData.append("alt_text", imageTitle);
+
+    fetch("/upload_image", {
+      method: "POST",
+      body: formData,
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          const template = `![${imageTitle}](${data.url})`;
+          insertMarkdown(template);
+        } else {
+          alert("Image upload failed!");
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        alert("Error uploading image!");
+      })
+      .finally(() => closeImageModal());
+
+  } else if (externalCheckbox.checked) {
+    // External image path
+    const url = externalLinkInput.value.trim();
+    if (!url) {
+      alert("Please enter the external image URL.");
+      return;
+    }
+
+    // For external images, use user-provided title or fallback
+    if (!imageTitle) {
+
+      const urlParts = url.split("/").filter(Boolean);
+      const lastPart = urlParts[urlParts.length - 1]; // e.g., "graphical_user_interface.jpg"
+      const baseName = lastPart ? lastPart.replace(/\.[^/.]+$/, "") : `external_image`;
+      // Generate a simple unique alt text using timestamp
+      imageTitle = `${baseName}`;
+    }
+
+    const template = `![${imageTitle}](${url})`;
+    insertMarkdown(template);
+    closeImageModal();
+
+  } else {
+    alert("Please select either Local Image or External Image Link.");
+  }
+});
+
+
+// Helper function to insert markdown at cursor
+function insertMarkdown(template) {
+  const start = mdeditor.selectionStart;
+  const end = mdeditor.selectionEnd;
+  const text = mdeditor.value;
+  mdeditor.value = text.substring(0, start) + template + text.substring(end);
+  mdeditor.selectionStart = mdeditor.selectionEnd = start + template.length;
+  mdeditor.focus();
+}
+
+// Close modal when clicking outside
+window.addEventListener("click", (event) => {
+  if (event.target === modal) closeImageModal();
+});
+
+
+
+
+    /*document.querySelector("#savepath").addEventListener("click", () => {
         var inputpath = document.getElementById('imagelink').value;
         var textarea = editor.textarea;
         var { selectionStart, selectionEnd, value } = textarea;
@@ -883,7 +1237,7 @@ document.getElementById('saveBtn').addEventListener('click', function () {
         }
         document.querySelector(".imagepopup").style.display = "none";
         document.querySelector('.overlay').style.display = 'none';
-    });
+    });*/
     function wrapSelectionWithLink(selectedText, url) {
         var textarea = editor.textarea;
         var { selectionStart, selectionEnd, value } = textarea;
@@ -905,7 +1259,7 @@ document.getElementById('saveBtn').addEventListener('click', function () {
         document.querySelector(".tablepopup").style.display = "none";
         document.querySelector('.overlay').style.display = 'block'; // Show the overlay
     });*/
-    document.querySelector("#savelink").addEventListener("click", () => {
+    /*document.querySelector("#savelink").addEventListener("click", () => {
         var inputlink = document.getElementById('linkin').value;
         var textarea = editor.textarea;
         var { selectionStart, selectionEnd, value } = textarea;
@@ -919,7 +1273,7 @@ document.getElementById('saveBtn').addEventListener('click', function () {
         }
         document.querySelector(".linkpopup").style.display = "none";
         document.querySelector('.overlay').style.display = 'none';
-    });
+    });*/
     // Heading dropdown listener
     document.getElementById("headingDropdown").addEventListener("change", (event) => {
         const selectedHeading = event.target.value;
@@ -1483,48 +1837,87 @@ function underlinewrapSelection(wrapper) {
 </script>
 
 <script>
+
+
+
+function replaceFiguresWithMarkdown(md_text, imagesMeta, baseUrl) {
+  let updatedText = md_text;
+
+  imagesMeta.forEach(img => {
+    // Build the markdown image link
+    const markdownImg = `![](${baseUrl}/images/${img.file_name})`;
+
+    // Regex to match the original <figure> containing this src
+    const figureRegex = new RegExp(`<figure[\\s\\S]*?${img.src}[\\s\\S]*?<\\/figure>`, "g");
+
+    // Replace figure with markdown
+    updatedText = updatedText.replace(figureRegex, markdownImg);
+  });
+
+  return updatedText;
+}
+
+var analysisId = "{{ analysis_id }}";
 window.onload = function () {
-    var textarea = document.getElementById("material_content");
-    var rawJson = textarea.value;
+    const textarea = document.getElementById("material_content");
+    var formcontrol  = document.querySelector(".form-control");
+    const loader = document.getElementById("textarealoader");
+    let rawJson = textarea.value;
 
     try {
-        var parsed = JSON.parse(rawJson);
+        let parsed = JSON.parse(rawJson);
+        loader.style.display = "block";
 
-        // Define all possible keys based on the page context
-        var possibleKeys = [
-            "main_content",
-            "comprehensive_lesson_plan",
-            "comprehensive_activities",
-            "comprehensive_assessments",
-            "comprehensive_instructor_guide"
-        ];
+        fetch("/process-md/{{ analysis_id }}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(parsed)
+        })
+        .then(response => response.json())
+        .then(updatedParsed => {
+            console.log("Updated parsed object:", updatedParsed);
 
-        // Try to find the first existing key
-        var content = "";
-        for (var key of possibleKeys) {
-            if (parsed[key]) {
-                content = parsed[key];
-                 // Special case: if the key is comprehensive_lesson_plan, also append practice_questions
-                if (key === "comprehensive_assessments" && parsed["practice_questions"]) {
-                    content += "\n\n" + parsed["practice_questions"];
-                }
-                break;
+            // If server already returns content directly
+            let content = updatedParsed;
+
+            if (content) {
+               
+                // Convert <div class="textbook-image"><img .../></div> into markdown image
+                const baseUrl = window.location.origin;
+
+                content = content.replace(
+                    /<div class="textbook-image">\s*<img\s+alt="([^"]+)"\s+src="([^"]+)"\s*\/>\s*<\/div>/g,
+                    (match, alt, src) => `![${alt}](${baseUrl}/${src})`
+                );
+
+                // Clean up accidental leading spaces before "!["
+                content = content.replace(/^\s*!\[/gm, '![');
+
+                 // Unescape newlines and tabs
+                content = content.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+                textarea.value = content;
+            } else {
+                console.warn("No content returned from server.");
             }
-        }
+        })
+        .catch(err => console.error("Error in fetch:", err))
+        .finally(() => {
+           
+            loader.style.display = "none";
+            formcontrol.classList.add("color-black");
 
-        // Only update the textarea if content was found
-        if (content) {
-            // Unescape newlines and tabs
-            content = content.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
-            textarea.value = content;
-        } else {
-            console.warn("No matching content key found in JSON.");
-        }
+        });
+        
 
     } catch (err) {
-        console.error("Error parsing JSON from textarea:", err);
+        loader.style.display = "none";
+        formcontrol.classList.add("color-black");
+        console.error("Error parsing initial JSON from textarea:", err);
     }
 };
+
+
+
 </script>
 
 
