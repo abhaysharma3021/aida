@@ -277,7 +277,8 @@ def index():
             audience_type = form.audience_type.data
             job_titles = form.job_titles.data
             
-            current_app.logger.info("Received form data: course_topic=%s, audience_type=%s", course_topic, audience_type)                                                                                                             
+            current_app.logger.info("Received form data: course_topic=%s, audience_type=%s", course_topic, audience_type)
+
             # Create a timestamp-based ID
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
             analysis_id = f"analysis_{timestamp}"
@@ -285,7 +286,7 @@ def index():
             # Generate audience analysis
             audience_analysis = generate_audience_analysis(course_topic, audience_type, '')
             current_app.logger.debug("Generated audience analysis for ID: %s", analysis_id)
-                                                                               
+
             
             # Save initial data to file
             analysis_data = {
@@ -297,7 +298,6 @@ def index():
             }
             save_analysis(analysis_id, analysis_data)
             current_app.logger.info("Analysis data saved with ID: %s", analysis_id)
-                                                                                 
             
             logged_user = session.get("user")
             if not logged_user:
@@ -315,31 +315,69 @@ def index():
             # Store the ID in session
             session['current_analysis_id'] = analysis_id
             current_app.logger.debug("Stored analysis ID in session: %s", analysis_id)
-                                                                                     
             
             return redirect(url_for('main.audience_analysis', analysis_id=analysis_id))
         
         except Exception as e:
-            current_app.logger.error("Error generating analysis: %s", str(e), exc_info=True)                                                                                          
+            current_app.logger.error("Error generating analysis: %s", str(e), exc_info=True)
             flash(f"Error generating analysis: {str(e)}")
             print(f"Error details: {str(e)}")
             return render_template('index.html', form=form)
-    
-    current_app.logger.debug("Rendering form without submission.")                                                                
+        
+    current_app.logger.debug("Rendering form without submission.")
     return render_template('index.html', form=form)
 
 @main.route('/audience_analysis/<analysis_id>', methods=['GET', 'POST'])
 def audience_analysis(analysis_id):
+
+    current_app.logger.info("Accessed audience_analysis view for ID: %s", analysis_id)
     # Load analysis data from file
     analysis_data = load_analysis(analysis_id)
     
     if not analysis_data:
-        current_app.logger.warning("Analysis ID %s not found. Redirecting to index.", analysis_id)                                                                                                
+        current_app.logger.warning("Analysis ID %s not found. Redirecting to index.", analysis_id)
         flash('Analysis not found. Please submit the form to generate a new analysis.')
         return redirect(url_for('main.index'))
     
     current_app.logger.debug("Loaded analysis data for ID: %s", analysis_id)
-                                                                        
+
+    if request.method == 'POST':
+        # Check if this is a task analysis generation request
+        if request.form.get('generate_task_analysis') == 'true':
+            try:
+                print(f"Generating task analysis for {analysis_data['course_topic']}")  # Debug log
+                
+                # Generate task analysis without terminal objectives
+                task_analysis = generate_task_analysis(
+                    analysis_data['course_topic'], 
+                    analysis_data['audience_type'],
+                    ""  # No terminal objectives needed
+                )
+                
+                print("Task analysis generated successfully")  # Debug log
+                
+                # Add task analysis to the data
+                analysis_data['task_analysis'] = task_analysis
+                
+                # Save updated analysis
+                save_analysis(analysis_id, analysis_data)
+                
+                print(f"Redirecting to task_analysis page for {analysis_id}")  # Debug log
+                
+                flash('Task analysis generated successfully!')
+                return redirect(url_for('main.task_analysis', analysis_id=analysis_id))
+                
+            except Exception as e:
+                print(f"Error generating task analysis: {str(e)}")  # Debug log
+                flash(f'Error generating task analysis: {str(e)}')
+                # Fall through to render the same page with error
+        
+        # If we get here, it's likely the old terminal objectives form submission
+        # You can remove this section if you don't need it anymore
+        else:
+            # Handle any other POST requests (like old terminal objectives form)
+            flash('Invalid form submission.')
+                                                                
     # Initialize the terminal objectives form
     form = TerminalObjectivesForm()
     
@@ -347,18 +385,19 @@ def audience_analysis(analysis_id):
     if 'terminal_objectives' in analysis_data:
         form.terminal_objectives.data = analysis_data['terminal_objectives']
         current_app.logger.debug("Pre-populated terminal objectives for ID: %s", analysis_id)
-                                                                                     
+
     
     if form.validate_on_submit():
-        
-        try:       
+
+        try:
             # Get terminal objectives from form
             terminal_objectives = form.terminal_objectives.data
             
             # Update the analysis data
             analysis_data['terminal_objectives'] = terminal_objectives
-            
-            current_app.logger.info("Received terminal objectives for ID: %s", analysis_id)                                                                               
+
+            current_app.logger.info("Received terminal objectives for ID: %s", analysis_id)
+
             # Generate task analysis
             task_analysis = generate_task_analysis(
                 analysis_data['course_topic'], 
@@ -371,7 +410,8 @@ def audience_analysis(analysis_id):
             
             # Save updated analysis
             save_analysis(analysis_id, analysis_data)
-            current_app.logger.info("Saved updated analysis with task analysis for ID: %s", analysis_id)                                                                                            
+            current_app.logger.info("Saved updated analysis with task analysis for ID: %s", analysis_id)
+
             
             # AnalysisLog.update_by_analysis_id(
             #     analysis_id=analysis_id,
@@ -380,7 +420,7 @@ def audience_analysis(analysis_id):
             
             # Redirect to task analysis page
             return redirect(url_for('main.task_analysis', analysis_id=analysis_id))
-    
+        
         except Exception as e:
             current_app.logger.error("Error processing terminal objectives for ID %s: %s", analysis_id, str(e), exc_info=True)
             flash(f"An error occurred: {str(e)}")
@@ -390,7 +430,8 @@ def audience_analysis(analysis_id):
                                    current_date='',
                                    analysis_id=analysis_id,
                                    form=form,
-                                   analysis_data={})                                                        
+                                   analysis_data={})
+
     # Convert Markdown to HTML
     audience_analysis_html = markdown.markdown(analysis_data['audience_analysis'])
     current_app.logger.debug("Rendered Markdown for audience analysis ID: %s", analysis_id)
@@ -413,14 +454,15 @@ def task_analysis(analysis_id):
         flash('Analysis not found. Please submit the form to generate a new analysis.')
         return redirect(url_for('main.index'))
     
-    try:  
     # Convert Markdown to HTML
+    try:
+        # Convert Markdown to HTML
         task_analysis_html = markdown.markdown(analysis_data['task_analysis'])
         current_app.logger.debug("Converted task analysis markdown to HTML for ID: %s", analysis_id)
     except Exception as e:
         current_app.logger.error("Error converting task analysis markdown for ID %s: %s", analysis_id, str(e), exc_info=True)
         flash("Failed to render task analysis.")
-        return redirect(url_for('main.index'))                                                                                                
+        return redirect(url_for('main.index'))
     
     return render_template('task_analysis.html', 
                           task_analysis=task_analysis_html,
@@ -433,18 +475,19 @@ def prepare_course_design(analysis_id):
     """
     Prepare for course design generation by collecting additional requirements.
     """
-    current_app.logger.info("Accessed prepare_course_design for ID: %s", analysis_id)                                                                                  
+    
+    current_app.logger.info("Accessed prepare_course_design for ID: %s", analysis_id)
     # Load analysis data from file
     analysis_data = load_analysis(analysis_id)
     
     if not analysis_data:
-        current_app.logger.warning("Analysis ID %s not found. Redirecting to index.", analysis_id)                                                                                                  
+        current_app.logger.warning("Analysis ID %s not found. Redirecting to index.", analysis_id)
         flash('Analysis not found. Please submit the form to generate a new analysis.')
         return redirect(url_for('main.index'))
     
     # Check if task analysis exists
     if 'task_analysis' not in analysis_data:
-        current_app.logger.warning("Task analysis not found for ID: %s. Redirecting to audience analysis.", analysis_id)                                                                                                                             
+        current_app.logger.warning("Task analysis not found for ID: %s. Redirecting to audience analysis.", analysis_id)      
         flash('Task analysis not found. Please complete task analysis first.')
         return redirect(url_for('main.audience_analysis', analysis_id=analysis_id))
     
@@ -452,12 +495,13 @@ def prepare_course_design(analysis_id):
     form = CourseDesignRequirementsForm()
     
     if form.validate_on_submit():
-        current_app.logger.debug("Form submitted for ID: %s", analysis_id)                                                                        
+        current_app.logger.debug("Form submitted for ID: %s", analysis_id)
         # Get form data
         course_duration = form.course_duration.data
         delivery_format = form.delivery_format.data
         module_count = form.module_count.data
         additional_requirements = form.additional_requirements.data
+
         current_app.logger.debug(
             "Collected form data: duration=%s, format=%s, modules=%s",
             course_duration, delivery_format, module_count
@@ -476,12 +520,12 @@ def prepare_course_design(analysis_id):
             components.append('strategies')
         if generate_assessment:
             components.append('assessment')
-            
+        
         current_app.logger.debug("Selected components: %s", components)
-                                                               
+
         # Make sure at least one component is selected
         if not components:
-            current_app.logger.info("No components selected for ID: %s", analysis_id)                                                                                     
+            current_app.logger.info("No components selected for ID: %s", analysis_id) 
             flash('Please select at least one component to generate.')
             return render_template('prepare_course_design.html',
                                  form=form,
@@ -502,13 +546,13 @@ def prepare_course_design(analysis_id):
         
         # Save updated analysis
         save_analysis(analysis_id, analysis_data)
-        current_app.logger.info("Saved course design prep data for ID: %s", analysis_id)                                                                                        
+        current_app.logger.info("Saved course design prep data for ID: %s", analysis_id)
         
         # Redirect to generate course design
         return redirect(url_for('main.generate_course_design', analysis_id=analysis_id))
     
     current_app.logger.debug("Rendering course design form for ID: %s", analysis_id)
-                                                                                
+
     # Convert Markdown to HTML for display
     audience_analysis_html = markdown.markdown(analysis_data['audience_analysis'])
     task_analysis_html = markdown.markdown(analysis_data['task_analysis'])
@@ -525,12 +569,13 @@ def prepare_course_design(analysis_id):
 
 @main.route('/generate_course_design/<analysis_id>', methods=['GET'])
 def generate_course_design(analysis_id):
-    current_app.logger.info("Accessed generate_course_design for ID: %s", analysis_id)                                                                                    
+
+    current_app.logger.info("Accessed generate_course_design for ID: %s", analysis_id)
     # Load analysis data from file
     analysis_data = load_analysis(analysis_id)
     
     if not analysis_data:
-        current_app.logger.warning("Analysis ID %s not found. Redirecting to index.", analysis_id)                                                                                             
+        current_app.logger.warning("Analysis ID %s not found. Redirecting to index.", analysis_id)
         flash('Analysis not found. Please submit the form to generate a new analysis.')
         return redirect(url_for('main.index'))
     
@@ -547,10 +592,11 @@ def generate_course_design(analysis_id):
         components_to_generate.remove('assessment')
     
     current_app.logger.debug("Remaining components to generate for ID %s: %s", analysis_id, components_to_generate)
-                                                                                                               
+
+
     # If all components exist and no new ones are requested, redirect to view
     if not components_to_generate:
-        current_app.logger.info("All components already exist for ID: %s. Redirecting to view.", analysis_id)                                                                                                                         
+        current_app.logger.info("All components already exist for ID: %s. Redirecting to view.", analysis_id)       
         flash('Course design already exists. Redirecting to existing design.')
         return redirect(url_for('main.view_course_design', analysis_id=analysis_id))
     
@@ -562,11 +608,11 @@ def generate_course_design(analysis_id):
             try:
                 module_count = int(module_count)
             except ValueError:
-                current_app.logger.warning("Invalid module_count format for ID %s: %s", analysis_id, module_count)                                                                                                                 
+                current_app.logger.warning("Invalid module_count format for ID %s: %s", analysis_id, module_count)
                 module_count = None
         
         current_app.logger.info("Generating course design for ID: %s with components: %s", analysis_id, components_to_generate)
-                                                                                                                       
+
         # Generate only the requested components
         updated_analysis_data = generate_comprehensive_course_design(
             analysis_data, 
@@ -577,7 +623,7 @@ def generate_course_design(analysis_id):
         # Save the updated analysis
         save_analysis(analysis_id, updated_analysis_data)
         current_app.logger.info("Successfully saved generated design for ID: %s", analysis_id)
-                                                                                      
+
         
         # Create success message based on generated components
         component_names = {
@@ -600,27 +646,26 @@ def generate_course_design(analysis_id):
         return redirect(url_for('main.view_course_design', analysis_id=analysis_id))
     
     except Exception as e:
-        current_app.logger.error("Error generating course design for ID %s: %s", analysis_id, str(e), exc_info=True)                                                                                                                   
+        current_app.logger.error("Error generating course design for ID %s: %s", analysis_id, str(e), exc_info=True)
         flash(f'Error generating course design: {str(e)}')
         return redirect(url_for('main.task_analysis', analysis_id=analysis_id))
 
 @main.route('/view_course_design/<analysis_id>')
 def view_course_design(analysis_id):
+
     current_app.logger.info("Accessed view_course_design for ID: %s", analysis_id)
-                                                                              
+
     # Load analysis data from file
     analysis_data = load_analysis(analysis_id)
     
     if not analysis_data:
         current_app.logger.warning("Analysis ID %s not found. Redirecting to index.", analysis_id)       
-                                                                                                        
         flash('Analysis not found. Please submit the form to generate a new analysis.')
         return redirect(url_for('main.index'))
     
     # Check if course design exists
     if 'course_structure' not in analysis_data:
         current_app.logger.warning("Course structure not found for ID: %s. Redirecting to generate.", analysis_id)
-                                                                                                                 
         flash('Course design not found. Generating now...')
         return redirect(url_for('main.generate_course_design', analysis_id=analysis_id))
     
@@ -640,21 +685,19 @@ def view_course_design(analysis_id):
 
 @main.route('/edit_course_design/<analysis_id>', methods=['GET', 'POST'])
 def edit_course_design(analysis_id):
+    
     current_app.logger.info("Accessed edit_course_design view for ID: %s", analysis_id)
-                                                                                      
     # Load analysis data from file
     analysis_data = load_analysis(analysis_id)
     
     if not analysis_data:
         current_app.logger.warning("Analysis ID %s not found. Redirecting to index.", analysis_id)
-                                                                                                  
         flash('Analysis not found.')
         return redirect(url_for('main.index'))
     
     # Check if course design exists
     if 'course_structure' not in analysis_data:
         current_app.logger.warning("Course structure missing for ID: %s. Redirecting to generation.", analysis_id)
-                                                                                                                 
         flash('Course design not found. Generating now...')
         return redirect(url_for('main.generate_course_design', analysis_id=analysis_id))
     
@@ -668,7 +711,6 @@ def edit_course_design(analysis_id):
         # Save the updated analysis
         save_analysis(analysis_id, analysis_data)
         current_app.logger.info("Course design updated for ID: %s", analysis_id)
-                                                                                
         flash('Course design updated successfully!')
         
         return redirect(url_for('main.view_course_design', analysis_id=analysis_id))
@@ -683,21 +725,20 @@ def edit_course_design(analysis_id):
 
 @main.route('/download_course_design/<analysis_id>')
 def download_course_design(analysis_id):
+   
     current_app.logger.info("Requested course design download for ID: %s", analysis_id)
-                                                                                  
+
     # Load analysis data from file
     analysis_data = load_analysis(analysis_id)
     
     if not analysis_data:
         current_app.logger.warning("Analysis ID %s not found. Redirecting to index.", analysis_id)     
-                                                                                                      
         flash('Analysis not found.')
         return redirect(url_for('main.index'))
     
     # Check if course design exists
     if 'course_structure' not in analysis_data:
         current_app.logger.warning("Course structure not found for ID: %s. Redirecting to generation.", analysis_id)
-                                                                                                                    
         flash('Course design not found. Generating now...')
         return redirect(url_for('main.generate_course_design', analysis_id=analysis_id))
     
@@ -735,6 +776,8 @@ def download_course_design(analysis_id):
     f = io.BytesIO()
     doc.save(f)
     f.seek(0)
+
+    
     
     # Send the file for download
     return send_file(
@@ -746,14 +789,13 @@ def download_course_design(analysis_id):
 
 @main.route('/results/<analysis_id>')
 def results(analysis_id):
+
     current_app.logger.info("Accessed results view for ID: %s", analysis_id)
-                                                                           
     # Load analysis data from file
     analysis_data = load_analysis(analysis_id)
     
     if not analysis_data:
         current_app.logger.warning("Analysis ID %s not found. Redirecting to index.", analysis_id)
-                                                                                                  
         flash('Analysis not found. Please submit the form to generate a new analysis.')
         return redirect(url_for('main.index'))
     
@@ -795,11 +837,9 @@ def results_redirect():
     analysis_id = session.get('current_analysis_id')
     if analysis_id:
         current_app.logger.info("Redirecting to results page for ID: %s", analysis_id)
-                                                                                     
         return redirect(url_for('main.results', analysis_id=analysis_id))
     else:
         current_app.logger.warning("No analysis ID found in session. Redirecting to index.")
-                                                                                            
         flash('No analysis results found. Please submit the form first.')
         return redirect(url_for('main.index'))
 
@@ -811,7 +851,6 @@ def edit_audience_analysis(analysis_id):
         
         if not analysis_data:
             current_app.logger.warning("Analysis ID %s not found. Redirecting to index.", analysis_id)
-                                                                                                     
             flash('Analysis not found.')
             return redirect(url_for('main.index'))
         
@@ -822,14 +861,12 @@ def edit_audience_analysis(analysis_id):
             # Save the updated analysis
             save_analysis(analysis_id, analysis_data)
             current_app.logger.info("Audience analysis updated for ID: %s", analysis_id)
-                                                                                        
             flash('Audience analysis updated successfully!')
             
             # Redirect back to audience analysis page
             return redirect(url_for('main.audience_analysis', analysis_id=analysis_id))
         
         current_app.logger.debug("Rendering audience analysis edit form for ID: %s", analysis_id)
-                                                                                                
         # For GET request, display the edit form for audience analysis only
         return render_template('edit_audience.html', 
                             analysis_id=analysis_id,
@@ -838,21 +875,20 @@ def edit_audience_analysis(analysis_id):
         
     except Exception as e:
         current_app.logger.error("Error editing audience analysis for ID %s: %s", analysis_id, str(e), exc_info=True)
-                                                                                                                     
         flash(f"Error: {str(e)}")
         return redirect(url_for('main.index'))
 
 @main.route('/edit_task/<analysis_id>', methods=['GET', 'POST'])
 def edit_task_analysis(analysis_id):
+    
     current_app.logger.info("Accessed edit_task_analysis view for ID: %s", analysis_id)
-                                                                                   
+
     try:
         # Load analysis data from file
         analysis_data = load_analysis(analysis_id)
         
         if not analysis_data:
             current_app.logger.warning("Analysis ID %s not found. Redirecting to index.", analysis_id)
-                                                                                                      
             flash('Analysis not found.')
             return redirect(url_for('main.index'))
         
@@ -863,14 +899,12 @@ def edit_task_analysis(analysis_id):
             # Save the updated analysis
             save_analysis(analysis_id, analysis_data)
             current_app.logger.info("Task analysis updated for ID: %s", analysis_id)
-                                                                                    
             flash('Task analysis updated successfully!')
             
             # Redirect back to task analysis page
             return redirect(url_for('main.task_analysis', analysis_id=analysis_id))
         
         current_app.logger.debug("Rendering task analysis edit form for ID: %s", analysis_id)
-                                                                                             
         # For GET request, display the edit form for task analysis only
         return render_template('edit_task.html', 
                             analysis_id=analysis_id,
@@ -879,20 +913,19 @@ def edit_task_analysis(analysis_id):
         
     except Exception as e:
         current_app.logger.error("Error editing task analysis for ID %s: %s", analysis_id, str(e), exc_info=True)
-                                                                                                                 
         flash(f"Error: {str(e)}")
         return redirect(url_for('main.index'))
 
 @main.route('/download_audience/<analysis_id>')
 def download_audience_analysis(analysis_id):
+
     current_app.logger.info("Download requested for audience analysis ID: %s", analysis_id)
-                                                                                       
+
     # Load analysis data from file
     analysis_data = load_analysis(analysis_id)
     
     if not analysis_data:
         current_app.logger.warning("Audience analysis not found for ID: %s", analysis_id)
-                                                                                         
         flash('Analysis not found.')
         return redirect(url_for('main.index'))
     
@@ -928,14 +961,14 @@ def download_audience_analysis(analysis_id):
 
 @main.route('/download_task/<analysis_id>')
 def download_task_analysis(analysis_id):
+
     current_app.logger.info("Download requested for task analysis ID: %s", analysis_id)
-                                                                                   
+
     # Load analysis data from file
     analysis_data = load_analysis(analysis_id)
     
     if not analysis_data:
         current_app.logger.warning("Audience analysis not found for ID: %s", analysis_id)
-                                                                                         
         flash('Analysis not found.')
         return redirect(url_for('main.index'))
     
@@ -971,14 +1004,14 @@ def download_task_analysis(analysis_id):
 
 @main.route('/generate_additional_components/<analysis_id>', methods=['POST'])
 def generate_additional_components(analysis_id):
+
     current_app.logger.info("Initiated additional component generation for ID: %s", analysis_id)
-                                                                                            
+
     # Load analysis data
     analysis_data = load_analysis(analysis_id)
     
     if not analysis_data:
         current_app.logger.warning("Analysis ID %s not found.", analysis_id)
-                                                                            
         flash('Analysis not found.')
         return redirect(url_for('main.index'))
     
@@ -1002,7 +1035,7 @@ def generate_additional_components(analysis_id):
                 except ValueError:
                     module_count = None
                     current_app.logger.warning("Invalid module_count format in analysis ID %s", analysis_id)
-                                                                                        
+
             
             # Generate components
             updated_analysis_data = generate_comprehensive_course_design(
@@ -1014,7 +1047,7 @@ def generate_additional_components(analysis_id):
             # Save the updated analysis
             save_analysis(analysis_id, updated_analysis_data)
             current_app.logger.info("Successfully generated components %s for ID: %s", components, analysis_id)
-                                                                                                   
+
             
             # Create success message
             component_names = {
@@ -1034,11 +1067,9 @@ def generate_additional_components(analysis_id):
             flash(message)
         except Exception as e:
             current_app.logger.error("Error generating additional components for ID %s: %s", analysis_id, str(e), exc_info=True)
-                                                                                                                                
             flash(f'Error generating additional components: {str(e)}')
     else:
         current_app.logger.info("No new components selected or all already exist for ID: %s", analysis_id)
-                                                                                                          
         flash('No components selected for generation.')
     
     return redirect(url_for('main.view_course_design', analysis_id=analysis_id))
@@ -1056,18 +1087,18 @@ logger = logging.getLogger(__name__)
 @main.route('/prepare_materials/<analysis_id>')
 def prepare_materials(analysis_id):
     """Display the material generation preparation page."""
-    current_app.logger.info("Accessed prepare_materials view for ID: %s", analysis_id)                                                                                  
+    current_app.logger.info("Accessed prepare_materials view for ID: %s", analysis_id)
     # Load analysis data
     analysis_data = load_analysis(analysis_id)
     
     if not analysis_data:
-        current_app.logger.warning("Analysis ID %s not found.", analysis_id)                                                                    
+        current_app.logger.warning("Analysis ID %s not found.", analysis_id)
         flash('Analysis not found.')
         return redirect(url_for('main.index'))
     
     # Check if course design exists
     if 'course_structure' not in analysis_data:
-        current_app.logger.warning("Course design missing for ID: %s. Redirecting to course design prep.", analysis_id)                                                                                                               
+        current_app.logger.warning("Course design missing for ID: %s. Redirecting to course design prep.", analysis_id)
         flash('Course design not found. Please complete course design first.')
         return redirect(url_for('main.prepare_course_design', analysis_id=analysis_id))
     
@@ -1080,7 +1111,8 @@ def prepare_materials(analysis_id):
     if existing_materials:
             current_app.logger.info("Existing course materials found for ID: %s", analysis_id)
     else:
-            current_app.logger.info("No existing course materials for ID: %s", analysis_id)                      
+            current_app.logger.info("No existing course materials for ID: %s", analysis_id)
+
     
     return render_template('prepare_materials.html',
                           analysis_id=analysis_id,
@@ -1093,13 +1125,14 @@ def prepare_materials(analysis_id):
 
 @main.route('/generate_materials/<analysis_id>', methods=['POST'])
 def generate_materials(analysis_id):
-    """Generate course materials based on user selections including tone."""
-    current_app.logger.info("Material generation initiated for ID: %s", analysis_id)                                                                                
+    """Generate course materials based on user selections including tone"""
+    current_app.logger.info("Material generation initiated for ID: %s", analysis_id)
+
     # Load analysis data
     analysis_data = load_analysis(analysis_id)
     
     if not analysis_data:
-        current_app.logger.warning("Analysis not found for ID: %s", analysis_id)                                                                        
+        current_app.logger.warning("Analysis not found for ID: %s", analysis_id)
         flash('Analysis not found.')
         return redirect(url_for('main.index'))
     
@@ -1112,31 +1145,35 @@ def generate_materials(analysis_id):
         detail_level = request.form.get('detail_level', 'comprehensive')
         format_preference = request.form.get('format_preference', 'structured')
         additional_notes = request.form.get('additional_notes', '')
+        
         # NEW: Get tone selection
-        content_tone = request.form.get('content_tone', 'default')                         
+        content_tone = request.form.get('content_tone', 'default')
+
         current_app.logger.debug("Received form data for ID %s: modules=%s, components=%s, detail=%s, format=%s",
                                  analysis_id, selected_modules, components, detail_level, format_preference)
+
         
         # Validate selections
         if not selected_modules:
-            current_app.logger.info("No modules selected for material generation (ID: %s)", analysis_id)                                                                                            
+            current_app.logger.info("No modules selected for material generation (ID: %s)", analysis_id)
             flash('Please select at least one module.')
             return redirect(url_for('main.prepare_materials', analysis_id=analysis_id))
         
         if not components:
-            current_app.logger.info("No components selected for material generation (ID: %s)", analysis_id)                                                                                               
+            current_app.logger.info("No components selected for material generation (ID: %s)", analysis_id)
             flash('Please select at least one component type.')
             return redirect(url_for('main.prepare_materials', analysis_id=analysis_id))
         
         # Validate tone selection
         valid_tones = ['default', 'optimistic', 'entertaining', 'humanized']
         if content_tone not in valid_tones:
-            content_tone = 'default'
-        # selected_modules = [int(m) for m in selected_modules]            
+            content_tone = 'default'                            
+        # selected_modules = [int(m) for m in selected_modules]
         # Generate materials
         logger.info(f"Generating materials for modules {selected_modules} with components {components} in {content_tone} tone")
         current_app.logger.info("Generating materials for ID %s: modules=%s, components=%s",
-                                analysis_id, selected_modules, components)                                                                                    
+                                analysis_id, selected_modules, components)
+
         
         materials = generate_course_materials(
             analysis_data,
@@ -1153,13 +1190,15 @@ def generate_materials(analysis_id):
             'components_generated': components,
             'detail_level': detail_level,
             'format_preference': format_preference,
-             'content_tone': content_tone,
+            'content_tone': content_tone,
             'additional_notes': additional_notes
         }
         
         # Merge with existing materials if any
         if 'course_materials' in analysis_data:
-            current_app.logger.debug("Merging with existing course materials for ID: %s", analysis_id)                                                                                          
+            
+            current_app.logger.debug("Merging with existing course materials for ID: %s", analysis_id)
+           
             existing_modules = {m['number']: m for m in analysis_data['course_materials'].get('modules', [])}
             
             # Update with new materials
@@ -1181,20 +1220,94 @@ def generate_materials(analysis_id):
         save_analysis(analysis_id, analysis_data)
         current_app.logger.info("Successfully generated materials for ID %s: modules=%d, components=%d",
                                 analysis_id, len(selected_modules), len(components))
+
         flash(f'Successfully generated {len(components)} component(s) for {len(selected_modules)} module(s) in {content_tone} tone!')
         return redirect(url_for('main.view_materials', analysis_id=analysis_id))
         
     except Exception as e:
-        current_app.logger.error("Error generating materials for ID %s: %s", analysis_id, str(e), exc_info=True)                                                                                                        
+        current_app.logger.error("Error generating materials for ID %s: %s", analysis_id, str(e), exc_info=True)
         logger.error(f"Error generating materials: {str(e)}")
         error_message = str(e)
         flash(f'Error generating materials: {error_message}')
         return redirect(url_for('main.prepare_materials', analysis_id=analysis_id))
 
-# UPDATE the existing view_materials route:
+# Import the image service at the top of routes.py
+from models.image_service import image_service
+
+# Update the view_material route to include images
+@main.route('/view_material/<analysis_id>/<int:module_id>/<material_type>')
+def view_material(analysis_id, module_id, material_type):
+    """View a specific material component."""
+    # Load analysis data
+    analysis_data = load_analysis(analysis_id)
+   
+    if not analysis_data or 'course_materials' not in analysis_data:
+        flash('Materials not found.')
+        return redirect(url_for('main.index'))
+   
+    # Find the module
+    module = None
+    for m in analysis_data['course_materials']['modules']:
+        if m['number'] == module_id:
+            module = m
+            break
+   
+    if not module:
+        flash('Module not found.')
+        return redirect(url_for('main.view_materials', analysis_id=analysis_id))
+   
+    # Get the specific material
+    material = module['components'].get(material_type)
+   
+    if not material:
+        flash(f'{material_type.replace("_", " ").title()} not found for this module.')
+        return redirect(url_for('main.view_materials', analysis_id=analysis_id))
+   
+    return render_template('view_material.html',
+                          analysis_id=analysis_id,
+                          course_topic=analysis_data['course_topic'],
+                          module_number=module_id,
+                          material_type=material_type,
+                          material=material)
+
+# Add a new route for fetching images dynamically
+@main.route('/get_images/<analysis_id>/<int:module_id>')
+def get_images_for_module(analysis_id, module_id):
+    """Get images for a specific module via AJAX."""
+    try:
+        # Load analysis data
+        analysis_data = load_analysis(analysis_id)
+        
+        if not analysis_data or 'course_materials' not in analysis_data:
+            return {'error': 'Materials not found'}, 404
+        
+        # Find the module
+        module = None
+        for m in analysis_data['course_materials']['modules']:
+            if m['number'] == module_id:
+                module = m
+                break
+        
+        if not module:
+            return {'error': 'Module not found'}, 404
+        
+        # Get images
+        images = image_service.get_module_images(module, count=6)
+        
+        return {
+            'success': True,
+            'images': images,
+            'module_title': module.get('title', f'Module {module_id}')
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching images for module {module_id}: {str(e)}")
+        return {'error': 'Failed to fetch images'}, 500
+
+# Update the materials dashboard to show image counts
 @main.route('/view_materials/<analysis_id>')
 def view_materials(analysis_id):
-    """Display the materials dashboard."""
+    """Display the materials dashboard with image information."""
     # Load analysis data
     analysis_data = load_analysis(analysis_id)
     
@@ -1220,6 +1333,12 @@ def view_materials(analysis_id):
     total_assessments = sum(1 for module in materials.get('modules', []) 
                           if 'assessments' in module.get('components', {}))
     
+     # Check image service availability
+    image_service_available = any([
+        image_service.unsplash_key,
+        image_service.pixabay_key,
+        image_service.pexels_key
+    ])
     return render_template('materials_dashboard.html',
                           analysis_id=analysis_id,
                           course_topic=analysis_data['course_topic'],
@@ -1229,7 +1348,7 @@ def view_materials(analysis_id):
                           total_lesson_plans=total_lesson_plans,
                           total_activities=total_activities,
                           total_assessments=total_assessments,
-                          stats=stats)
+                          stats=stats,image_service_available=image_service_available)
 
 # UPDATE the existing view_material route:
 @main.route('/view_material/<analysis_id>/<int:module_id>/<material_type>')
@@ -1270,18 +1389,17 @@ def view_material(analysis_id, module_id, material_type):
                           module_number=module_id,
                           material_type=material_type,
                           material=material)
-
 # UPDATE the existing edit_material route:
 @main.route('/edit_material/<analysis_id>/<int:module_id>/<material_type>', methods=['GET', 'POST'])
 def edit_material(analysis_id, module_id, material_type):
     """Edit a specific material component."""
     current_app.logger.info("Accessing edit view for material '%s' in module %s (analysis: %s)",
-                            material_type, module_id, analysis_id)                                                                                      
+                            material_type, module_id, analysis_id)
     # Load analysis data
     analysis_data = load_analysis(analysis_id)
     
     if not analysis_data or 'course_materials' not in analysis_data:
-        current_app.logger.warning("Materials not found for analysis ID: %s", analysis_id)         
+        current_app.logger.warning("Materials not found for analysis ID: %s", analysis_id)
         flash('Materials not found.')
         return redirect(url_for('main.index'))
     
@@ -1303,7 +1421,7 @@ def edit_material(analysis_id, module_id, material_type):
     
     if not material:
         current_app.logger.warning("Material type '%s' not found in module %s (analysis ID: %s)",
-                                   material_type, module_id, analysis_id)                                    
+                                   material_type, module_id, analysis_id)
         flash(f'{material_type.replace("_", " ").title()} not found for this module.')
         return redirect(url_for('main.view_materials', analysis_id=analysis_id))
     
@@ -1321,7 +1439,7 @@ def edit_material(analysis_id, module_id, material_type):
             analysis_data['course_materials']['modules'][module_idx]['components'][material_type] = material
             save_analysis(analysis_id, analysis_data)
             current_app.logger.info("Successfully updated material '%s' in module %s (analysis ID: %s)",
-                                    material_type, module_id, analysis_id)                                           
+                                    material_type, module_id, analysis_id)
             
             flash(f'{material_type.replace("_", " ").title()} updated successfully!')
             return redirect(url_for('main.view_material', 
@@ -1331,7 +1449,7 @@ def edit_material(analysis_id, module_id, material_type):
             
         except Exception as e:
             current_app.logger.error("Error updating material '%s' in module %s: %s",
-                                     material_type, module_id, str(e), exc_info=True)                                                 
+                                     material_type, module_id, str(e), exc_info=True)
             flash(f'Error updating material: {str(e)}')
             return render_template('edit_material.html',
                                  analysis_id=analysis_id,
@@ -1342,14 +1460,16 @@ def edit_material(analysis_id, module_id, material_type):
     # For GET request, show edit form
     if isinstance(material, dict):
         material_content = material.get('raw_content', json.dumps(material, indent=2))
+        
         # material_content_format = escape_control_characters(material_content)
         # material_raw = json.loads(material_content_format)
         # raw_main_content = material_raw['main_content']
         # print(raw_main_content)
     else:
         material_content = str(material)
+
     current_app.logger.debug("Loaded material '%s' for editing (module: %s, analysis ID: %s)",
-                             material_type, module_id, analysis_id)                                                  
+                             material_type, module_id, analysis_id)
     
     return render_template('edit_material.html',
                           analysis_id=analysis_id,
@@ -1368,14 +1488,14 @@ def generate_single_material(analysis_id, module_id, material_type):
     analysis_data = load_analysis(analysis_id)
     
     if not analysis_data:
-        current_app.logger.warning("Analysis not found for ID: %s", analysis_id)                                                   
+        current_app.logger.warning("Analysis not found for ID: %s", analysis_id)
         flash('Analysis not found.')
         return redirect(url_for('main.index'))
     
     try:
         # Generate the specific material
         generator = CourseMaterialsGenerator(analysis_data)
-        current_app.logger.debug("Calling material generator for component: %s", component)                               
+        current_app.logger.debug("Calling material generator for component: %s", component)
         
         # Map material type to component name
         component_map = {
@@ -1422,7 +1542,8 @@ def generate_single_material(analysis_id, module_id, material_type):
         
         # Save updated analysis
         save_analysis(analysis_id, analysis_data)
-        current_app.logger.info("Material '%s' generated and saved successfully for module %s", material_type, module_id)                                           
+        current_app.logger.info("Material '%s' generated and saved successfully for module %s", material_type, module_id)
+
         
         flash(f'{material_type.replace("_", " ").title()} generated successfully!')
         return redirect(url_for('main.view_material', 
@@ -1431,7 +1552,7 @@ def generate_single_material(analysis_id, module_id, material_type):
                               material_type=material_type))
         
     except Exception as e:
-        current_app.logger.error("Error generating single material: %s", str(e), exc_info=True)                                      
+        current_app.logger.error("Error generating single material: %s", str(e), exc_info=True)
         logger.error(f"Error generating single material: {str(e)}")
         flash(f'Error generating material: {str(e)}')
         return redirect(url_for('main.view_materials', analysis_id=analysis_id))
@@ -1439,29 +1560,32 @@ def generate_single_material(analysis_id, module_id, material_type):
 @main.route('/regenerate_module/<analysis_id>/<int:module_id>')
 def regenerate_module(analysis_id, module_id):
     """Regenerate all materials for a specific module."""
-    current_app.logger.info("Starting regeneration for module %s (analysis ID: %s)", module_id, analysis_id)                         
+    current_app.logger.info("Starting regeneration for module %s (analysis ID: %s)", module_id, analysis_id)
+
     try:
         # Load analysis data
         analysis_data = load_analysis(analysis_id)
         
         if not analysis_data:
-            current_app.logger.warning("Analysis not found for ID: %s", analysis_id)                                   
+            current_app.logger.warning("Analysis not found for ID: %s", analysis_id)
             flash('Analysis not found.')
             return redirect(url_for('main.index'))
         
-        current_app.logger.debug("Loaded analysis data for regeneration")                                                                                            
+        current_app.logger.debug("Loaded analysis data for regeneration")
+        
         # Generate all materials for the module
         generator = CourseMaterialsGenerator(analysis_data)
         materials = generator.generate_all_materials(
             selected_modules=[module_id],
             components=['lesson_plans', 'content', 'activities', 'assessments', 'instructor_guides']
         )
+
         current_app.logger.debug("Generated new materials for module %s", module_id)
         
         # Initialize course_materials if it doesn't exist
         if 'course_materials' not in analysis_data:
             analysis_data['course_materials'] = {'modules': []}
-            current_app.logger.info("Initialized empty course_materials in analysis data")                                                                              
+            current_app.logger.info("Initialized empty course_materials in analysis data")
         
         # Replace the module materials
         modules = analysis_data['course_materials']['modules']
@@ -1474,13 +1598,13 @@ def regenerate_module(analysis_id, module_id):
         
         # Save updated analysis
         save_analysis(analysis_id, analysis_data)
-        current_app.logger.info("Regenerated module %s successfully saved", module_id)                                                                                              
+        current_app.logger.info("Regenerated module %s successfully saved", module_id)
         
         flash(f'Module {module_id} regenerated successfully!')
         return redirect(url_for('main.view_materials', analysis_id=analysis_id))
         
     except Exception as e:
-        current_app.logger.error("Error regenerating module %s: %s", module_id, str(e), exc_info=True)                      
+        current_app.logger.error("Error regenerating module %s: %s", module_id, str(e), exc_info=True)
         flash(f'Error regenerating module {module_id}: {str(e)}')
         return redirect(url_for('main.view_materials', analysis_id=analysis_id))
 
@@ -1541,7 +1665,7 @@ def download_all_materials(analysis_id):
     analysis_data = load_analysis(analysis_id)
     
     if not analysis_data or 'course_materials' not in analysis_data:
-        current_app.logger.error("While download_all_materials-Materials not found: %s", analysis_id, str(e), exc_info=True)                         
+        current_app.logger.error("While download_all_materials-Materials not found: %s", analysis_id, str(e), exc_info=True)
         flash('Materials not found.')
         return redirect(url_for('main.view_materials', analysis_id=analysis_id))
     
@@ -1556,8 +1680,7 @@ def download_all_materials(analysis_id):
             
             navigation_data = create_combined_navigation(analysis_data['course_materials'])
             zip_file.writestr('navigation.json', json.dumps(navigation_data, indent=2))
-
-            # Add SCORM runtime files if requested
+			# Add SCORM runtime files if requested
             if include_scorm:
                 scorm_files = {
                     'index_lms.html': os.path.join(current_app.root_path, 'static', 'index_lms.html'),
@@ -1587,8 +1710,7 @@ def download_all_materials(analysis_id):
                 )
                 zip_file.writestr('imsmanifest.xml', manifest_xml)
 
-            
-
+         
             # Add each module's materials
             for module in analysis_data['course_materials']['modules']:
                 module_folder = f"Module_{module['number']}_{sanitize_filename(module['title'])}"
@@ -1633,70 +1755,23 @@ def download_all_materials(analysis_id):
                                     component_data.get('practice_questions', '')
                                 )
                                 asses_json_output = parse_assessment_to_json(combined_content)
-                                cleaned_data = asses_json_output                                
+                                cleaned_data = asses_json_output
  
                             else:
                                 asses_json_output = None  # or handle the missing key case appropriately
  
-                           
-                            # cleaned_data = asses_json_output
-                            # client = GroqClient()
-                            # print("Generating assessments from AI")
-                            # system_prompt = "You are an expert educational content formatter. Your task is to output only JSON and nothing else. Do not include explanations, Markdown formatting, or comments. Use the following structure exactly with only properties mentioned here: { \"comprehensive_assessments\": { \"knowledge_check_questions\": { \"multiple_choice_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"options\": [\"<Option 1>\", \"<Option 2>\", \"...\"], \"correct_answer\": \"<Correct Answer>\", \"content_reference\": \"<Content Reference>\", \"learning_objective_tested\": \"<Learning Objective>\" }, \"...\" ], \"true_false_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"correct_answer\": <Boolean>, \"content_reference\": \"<Content Reference>\", \"learning_objective_tested\": \"<Learning Objective>\" }, \"...\" ], \"short_answer_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"sample_correct_answer\": \"<Sample Answer>\", \"key_points_required\": [\"<Key Point 1>\", \"<Key Point 2>\", \"...\"], \"content_reference\": \"<Content Reference>\", \"learning_objective_tested\": \"<Learning Objective>\" }, \"...\" ] }, \"application_questions\": { \"scenario_based_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"sample_correct_answer\": \"<Sample Answer>\", \"assessment_rubric\": { \"excellent\": { \"score\": <Score>, \"description\": \"<Description>\" }, \"good\": { \"score\": <Score>, \"description\": \"<Description>\" }, \"satisfactory\": { \"score\": <Score>, \"description\": \"<Description>\" }, \"needs_improvement\": { \"score\": <Score>, \"description\": \"<Description>\" } }, \"content_connection\": \"<Content Connection>\" }, \"...\" ], \"problem_solving_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"step_by_step_solution\": [\"<Step 1>\", \"<Step 2>\", \"...\"], \"common_mistakes\": [\"<Mistake 1>\", \"<Mistake 2>\", \"...\"], \"full_credit_answer\": \"<Full Credit Answer>\" }, \"...\" ] }, \"analysis_and_synthesis_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"sample_answer\": \"<Sample Answer>\", \"grading_criteria\": [\"<Criterion 1>\", \"<Criterion 2>\", \"...\"], \"content_references\": [\"<Reference 1>\", \"<Reference 2>\", \"...\"] }, \"...\" ], \"practical_assessment_project\": { \"project_description\": \"<Project Description>\", \"project_requirements\": [\"<Requirement 1>\", \"<Requirement 2>\", \"...\"], \"deliverables\": [\"<Deliverable 1>\", \"<Deliverable 2>\", \"...\"], \"grading_rubric\": { \"concept_application\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" }, \"technical_accuracy\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" }, \"completeness\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" }, \"quality_of_explanation\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" }, \"innovation_creativity\": { \"weight\": \"<Weight>\", \"description\": \"<Description>\" } } }, \"self_assessment_tools\": { \"knowledge_self_check\": [ { \"question\": \"<Question Text>\", \"scale\": \"<Scale>\" }, \"...\" ], \"skills_self_assessment\": [ { \"question\": \"<Question Text>\", \"options\": [\"<Option 1>\", \"<Option 2>\", \"...\"] }, \"...\" ] }, \"answer_keys_and_explanations\": { \"note\": \"<Note>\" } }, \"practice_questions\": [ { \"question_number\": <Question Number>, \"question\": \"<Question Text>\", \"options\": [\"<Option 1>\", \"<Option 2>\", \"...\"], \"answer\": \"<Answer>\", \"content_reference\": \"<Content Reference>\", \"study_tip\": \"<Study Tip>\" }, \"...\" ], \"assessment_overview\": { \"total_questions\": \"<Total Questions>\", \"question_types\": [\"<Type 1>\", \"<Type 2>\", \"...\"], \"assessment_features\": [\"<Feature 1>\", \"<Feature 2>\", \"...\"], \"estimated_assessment_time\": \"<Estimated Time>\" } }"
-                           
-                            # raw_response = client.generate(content, system_prompt)
-                            # # Step 1: Strip the outer single quotes (if present)
-                            # raw_response = raw_response.strip("'")
-                          
-                            # parsed_json = json.loads(raw_response)
-                           
-                            # cleaned_data = parsed_json
-                            # clean_json_filename = f"{filename}.clean.json"
-                            # clean_json_content = json.dumps(cleaned_data, indent=2)
-                            # zip_file.writestr(clean_json_filename, clean_json_content)
-                        
 
                         elif component_type == "content":
-                            #print('content')
+                             #json_output = parse_content_to_json_contenttype(component_data['raw_content'])
                             if 'raw_content' in component_data:
-                                json_output = parse_content_to_json_contenttype(component_data['raw_content'])
+                                json_output = parse_content_to_json_contenttype(component_data['raw_content'],analysis_id,component_data['metadata'])
                             elif 'main_content' in component_data:
-                                json_output = parse_content_to_json_contenttype(component_data['main_content'])
+                                json_output = parse_content_to_json_contenttype(component_data['main_content'],analysis_id,component_data['metadata'])
                             else:
                                 json_output = None  # or handle the missing key case appropriately
 
                             cleaned_data = json_output
-                            # json_output = parse_content_to_json_contenttype(component_data['main_content'])
-                            # cleaned_data = json_output
-                            # var_parsed_json = json.loads(content)
-                            # var_markdown_text = var_parsed_json.get("main_content", "")
-                            # client = GroqClient()
-                            # system_prompt = "You are an expert educational content formatter. Your task is to output only JSON and nothing else. Do not include explanations, Markdown formatting, or comments. Use the following structure exactly with only properties mentioned here: {\"chapter\": {\"title\": \"\", \"learningOutcomes\": [], \"overview\": \"\", \"introduction\": \"\", \"topics\": [{\"title\": \"\", \"overview\": \"\", \"coreConcepts\": {\"definition\": \"\", \"theoreticalFoundation\": \"\", \"keyComponents\": []}, \"examples\": [{\"level\": \"\", \"steps\": []}], \"practicalApplications\": \"\", \"challengesAndSolutions\": [{\"challenge\": \"\", \"solution\": \"\"}], \"bestPractices\": []}], \"synthesis\": \"\", \"implementationGuide\": [], \"toolsAndResources\": {\"essentialTools\": [], \"additionalResources\": {\"recommendedReadings\": [], \"onlineTutorials\": [], \"practicePlatforms\": [], \"professionalCommunities\": []}}, \"summary\": \"\", \"glossary\": [{\"term\": \"\", \"definition\": \"\"}]}}}"
-
-                           
-
-                            # Call Groq to get structured response
-                            # print("Sending chapter markdown to Groq for parsing...")
-                            
-                            # raw_response = client.generate(var_markdown_text, system_prompt)
-                          
-                            # parsed_raw = json.loads(raw_response)
-
-                            # Step 2: Extract the relevant part directly (no Markdown conversion needed)
-                            # chapter_data = parsed_raw.get('chapter', {})                           
-
-                            # Step 4: Clean the chapter data using your existing clean_json_structure function
-                            # cleaned_data = clean_json_structure(chapter_data)
-                            
-                            # output_json = {'chapter': chapter_data}
-
-                            # Step 4: Clean the chapter data using your existing clean_json_structure function
-                            # cleaned_data = clean_json_structure(output_json)
-                            # clean_json_filename = f"{filename}.clean.json"
-                            # clean_json_content = json.dumps(cleaned_data, indent=2)
-                            # zip_file.writestr(clean_json_filename, clean_json_content)
-
-
+                                                     
                         else:
                             cleaned_data = component_data  # fallback: use raw JSON if unknown type
                             
@@ -1705,6 +1780,54 @@ def download_all_materials(analysis_id):
                         clean_json_content = json.dumps(cleaned_data, indent=2)
                         zip_file.writestr(clean_json_filename, clean_json_content)
 
+
+            # 🔹 Now SCORM logic (AFTER modules)
+            if include_scorm:
+                scorm_files = {
+                    'index_lms.html': os.path.join(current_app.root_path, 'static', 'index_lms.html'),
+                    'course.js': os.path.join(current_app.root_path, 'static', 'js', 'course.js'),
+                    'ADLwrapper.js': os.path.join(current_app.root_path, 'static', 'js', 'ADLwrapper.js'),
+                    'index.css': os.path.join(current_app.root_path, 'static', 'css', 'index.css')
+                }
+
+                # Add all files from static/images
+                images_folder = os.path.join(current_app.root_path, 'static', 'images')
+                for root, dirs, files in os.walk(images_folder):
+                    for file in files:
+                        abs_path = os.path.join(root, file)
+                        rel_path = os.path.relpath(abs_path, os.path.join(current_app.root_path, 'static'))
+                        scorm_files[rel_path] = abs_path
+
+                # Point to the subfolder for the current analysis_id only
+                analysis_folder = os.path.join(
+                    current_app.root_path, "..", "moduleimages", f"{analysis_id}"
+                )
+                analysis_folder = os.path.abspath(analysis_folder)
+
+                if os.path.exists(analysis_folder):
+                    for root, dirs, files in os.walk(analysis_folder):
+                        for file in files:
+                            abs_path = os.path.join(root, file)
+
+                            # Make rel_path relative to the *parent of moduleimages*
+                            rel_path = os.path.relpath(abs_path, os.path.join(analysis_folder, "..", ".."))
+                            rel_path = rel_path.replace("\\", "/")
+
+                            # ✅ Now SCORM will contain: moduleimages/analysis_<id>/image.jpg
+                            scorm_files[rel_path] = abs_path
+
+                for arcname, filepath in scorm_files.items():
+                    if os.path.exists(filepath):
+                        zip_file.write(filepath, arcname)
+                    else:
+                        current_app.logger.warning(f'SCORM file missing: {filepath}')
+
+                # Add manifest
+                manifest_xml = create_scorm_manifest(
+                    course_title=analysis_data['course_topic'],
+                    modules=analysis_data['course_materials']['modules']
+                )
+                zip_file.writestr('imsmanifest.xml', manifest_xml)
 
         # Prepare for download
         zip_buffer.seek(0)
@@ -1731,7 +1854,8 @@ def format_question_sections(text):
     """
     question_pattern = r'(^[\*\+\-\s]*\**\s*Question\s*\d+\s*[:\-]?)\s*'
     text = re.sub(question_pattern, r'\1\n', text, flags=re.IGNORECASE | re.MULTILINE)
-    return text       
+    return text         
+
 
 def parse_assessment_to_json(assessment_text):
     # Define section assessmentHeadings for the assessment
@@ -1743,9 +1867,9 @@ def parse_assessment_to_json(assessment_text):
         "Practical Assessment Project",
         "Self-Assessment Tools","Answer Keys and Explanations","Practice Questions for"
     ]
-
+    
     single_instance_sections = {"Multiple Choice Questions", "True/False Questions"}
-    assessmentRaw_text = format_question_sections(assessment_text)                                                                                                  
+    assessmentRaw_text = format_question_sections(assessment_text) 
     def asmt_clean_line(line):
         cleaned = re.sub(r'^#+\s*', '', line)
         cleaned = re.sub(r'^[-*+]\s+', '', cleaned)
@@ -1762,7 +1886,7 @@ def parse_assessment_to_json(assessment_text):
     asmt_parsed_data = {}
     asmt_current_heading = None
     asmt_lowercase_headings = [h.lower() for h in assessmentHeadings]
-    seen_once_set = set()                                                                    
+    seen_once_set = set()  # track first-seen single-instance headings
 
     # for line in asmt_cleaned_lines:
     #     if line.lower() in asmt_lowercase_headings:
@@ -1792,9 +1916,9 @@ def parse_assessment_to_json(assessment_text):
             if asmt_cleaned_lines == h_lower or (h == "Practice Questions for" and line.lower().startswith(h_lower)):
                 if h in single_instance_sections and h in seen_once_set:
                     matching_heading = None  # Skip duplicate occurrence
-                    break                                                     
+                    break                                                                                                                   
                 matching_heading = h
-                seen_once_set.add(h)                                              
+                seen_once_set.add(h)     
                 break
         if matching_heading:
             asmt_current_heading = matching_heading
@@ -1897,7 +2021,6 @@ def parse_assessment_to_json(assessment_text):
                 }
             elif expect_question_text:
                 if line.strip():  # non-empty line just after 'Question'
-                                                                   
                     current_question["question"] = line.strip()
                     expect_question_text = False
             elif line.startswith("Correct Answer:"):
@@ -1918,7 +2041,7 @@ def parse_assessment_to_json(assessment_text):
         questions = []
         current_question = {}
         key_points = []
-        expect_question_text = False                              
+        expect_question_text = False               
         for line in lines:
             line = asmt_clean_line(line)
             if line.startswith("Question"):
@@ -1959,7 +2082,7 @@ def parse_assessment_to_json(assessment_text):
     def process_scenario_based(lines):
         questions = []
         current_question = {}
-        expect_question_text = False                                    
+        expect_question_text = False                     
         rubric = {}
         for line in lines:
             line = asmt_clean_line(line)
@@ -2011,7 +2134,7 @@ def parse_assessment_to_json(assessment_text):
         questions = []
         current_question = {}
         grading_criteria = []
-        expect_question_text = False                                 
+        expect_question_text = False                     
         for line in lines:
             line = asmt_clean_line(line)
             if line.startswith("Question"):
@@ -2505,10 +2628,204 @@ def format_keyword_sections(text):
     text = re.sub(solution_pattern, r'\n\1', text, flags=re.IGNORECASE | re.MULTILINE)
 
 
-    return text                                 
-def parse_content_to_json_contenttype(md_text):
-    #rawtext = md_text
-    rawtext = format_keyword_sections(md_text)                                          
+    return text
+
+
+import requests
+from flask import request,jsonify
+from bs4 import BeautifulSoup
+import shutil
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # this points to /app
+#SAVE_DIR = os.path.join(BASE_DIR, "static", "materialimages")
+MODULE_IMAGES_BASE = os.path.join(BASE_DIR, "..", "moduleimages")  # outside static
+
+def safe_filename(text, idx):
+    """Sanitize alt text into a safe filename."""
+    if not text:
+        return f"image_{idx}"
+    text = text.strip().replace(" ", "_")
+    text = re.sub(r'[^A-Za-z0-9_\-]', '', text)   # keep only safe chars
+    return text[:50]
+
+
+from urllib.parse import urlparse    
+def extract_and_download_figures(md_text, analysis_id):
+    """
+    Extract <figure> and markdown image tags from md_text,
+    download images into /moduleimages/<analysis_id>/,
+    and replace references with local <img> tags.
+    """
+    save_folder = os.path.join(MODULE_IMAGES_BASE, str(analysis_id))
+    os.makedirs(save_folder, exist_ok=True)
+
+
+    # --- Helper to detect if a URL is local to this backend ---
+    def is_local(img_url):
+        parsed = urlparse(img_url)
+        # Relative URLs are local
+        if not parsed.netloc:
+            return True
+        # Absolute URLs → check if hostname matches current backend host
+        return parsed.netloc == request.host
+
+    # --- Step 1: Convert markdown-style images to HTML ---
+    md_img_pattern = re.compile(r'!\[([^\]]*)\]\(([^)]+)\)')
+    
+    def md_to_div(match):
+        alt_text = match.group(1) or "image"
+        img_url = match.group(2)
+
+        # if is_local(img_url):
+        #     # Local URL → keep as-is
+        #     return f'<div class="textbook-image"><img src="{img_url}" alt="{alt_text}"/></div>'
+        
+        if is_local(img_url):
+            # Local URL → convert to relative path inside SCORM package
+            url_path = img_url.split("?")[0]
+            base_name = os.path.basename(url_path)
+            rel_path = os.path.join("moduleimages", str(analysis_id), base_name).replace("\\", "/")
+            return f'<div class="textbook-image"><img src="{rel_path}" alt="{alt_text}"/></div>'
+
+
+        # Extract the filename from the URL
+        url_path = img_url.split("?")[0]  # remove query params
+        base_name = os.path.basename(url_path)  # e.g., "graphical_user_interface.jpg"
+        file_name = base_name or "image.jpg"
+        
+        # safe_name = re.sub(r'\W+', '_', alt_text.strip()).strip("_")
+        # file_ext = os.path.splitext(img_url.split("?")[0])[1] or ".jpg"
+        # file_name = f"{safe_name}{file_ext}"
+
+        file_path = os.path.join(save_folder, file_name)
+        rel_path = os.path.join("moduleimages", str(analysis_id), file_name).replace("\\", "/")
+
+        if not os.path.exists(file_path):
+            try:
+                response = requests.get(img_url, timeout=30)
+                response.raise_for_status()
+                with open(file_path, "wb") as f:
+                    f.write(response.content)
+            except Exception as e:
+                print(f"[Download Error] {img_url}: {e}")
+
+        return f'<div class="textbook-image"><img src="{rel_path}" alt="{alt_text}"/></div>'
+
+    md_text = md_img_pattern.sub(md_to_div, md_text)
+
+    soup = BeautifulSoup(md_text, "html.parser")
+
+    # --- Step 2: Handle <figure> tags and download images ---
+    for idx, fig in enumerate(soup.find_all("figure"), start=1):
+        try:
+            img_tag = fig.find("img")
+            if not img_tag:
+                continue
+
+            img_url = img_tag.get("src")
+            alt_text = img_tag.get("alt", f"image_{idx}")
+            
+
+            safe_name = re.sub(r'\W+', '_', alt_text.strip()).strip("_")
+            file_ext = os.path.splitext(img_url.split("?")[0])[1] or ".jpg"
+            file_name = f"{safe_name}{file_ext}"
+            file_path = os.path.join(save_folder, file_name)
+
+            # Download if not exists
+            if not os.path.exists(file_path):
+                try:
+                    response = requests.get(img_url, timeout=30)
+                    response.raise_for_status()
+                    with open(file_path, "wb") as f:
+                        f.write(response.content)
+                except Exception as e:
+                    print(f"[Download Error] {img_url}: {e}")
+                    continue
+
+            # Replace <figure> with <img>
+            rel_path = os.path.join("moduleimages", str(analysis_id), file_name).replace("\\", "/")
+            new_img_tag = soup.new_tag("img", src=rel_path, alt=alt_text)
+            fig.replace_with(new_img_tag)
+
+        except Exception as e:
+            print(f"[Figure Error] {e}")
+            continue
+
+    return str(soup)
+
+
+
+@main.route("/upload_image", methods=["POST"])
+def upload_image():
+    if 'image' not in request.files:
+        return jsonify({"success": False, "message": "No file provided"}), 400
+
+    file = request.files['image']
+    analysis_id = request.form.get("analysis_id", "default_analysis")
+
+    # --- Step 1: Make folder ---
+    save_folder = os.path.join(MODULE_IMAGES_BASE, str(analysis_id))
+    os.makedirs(save_folder, exist_ok=True)
+
+    # --- Step 2: Generate safe filename ---
+    # alt_text = request.form.get("alt_text", os.path.splitext(file.filename)[0])
+    # safe_name = re.sub(r'\W+', '_', alt_text.strip()).strip("_")
+    safe_name = re.sub(r'\W+', '_', os.path.splitext(file.filename)[0])
+    file_ext = os.path.splitext(file.filename)[1] or ".jpg"
+    #timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    # file_name = f"{safe_name}_{timestamp}{file_ext}"
+    file_name = f"{safe_name}{file_ext}"
+    file_path = os.path.join(save_folder, file_name)
+
+    # --- Step 3: Save file ---
+    file.save(file_path)
+
+    # --- Step 4: Build dynamic URL ---
+    # request.host_url gives the current scheme + host + port
+    rel_path = os.path.join("moduleimages", str(analysis_id), file_name).replace("\\", "/")
+    file_url = f"{request.host_url.rstrip('/')}/{rel_path}"
+
+    return jsonify({"success": True, "url": file_url})
+
+@main.route('/process-md/<analysis_id>', methods=["POST"])
+def process_md(analysis_id):
+    try:
+        data = request.get_json()
+        # if not data or "md_text" not in data:
+        #     return jsonify({"error": "md_text missing"}), 400
+
+        # md_text = data["main_content"]
+
+        possible_keys = [
+            "main_content",
+            "comprehensive_assessments",
+            "comprehensive_activities",
+            "comprehensive_lesson_plan",
+            "comprehensive_instructor_guide",
+        ]
+
+        md_text = next((data[k] for k in possible_keys if k in data and data[k]), None)
+
+        # Run your existing function
+        updated_md_text = extract_and_download_figures(md_text,analysis_id)
+
+        # Update the object
+        data = updated_md_text
+
+        return jsonify(data)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+def parse_content_to_json_contenttype(md_text,analysis_id,coursetopic):
+    # rawtext = md_text
+    rawtext = format_keyword_sections(md_text)
+    #imgresult = extract_and_download_figures(md_text)
+    rawtext = extract_and_download_figures(rawtext,analysis_id)
+    #print(imgresult)
 
     headings = [
         "Chapter", "Learning Outcomes", "Chapter Overview", "Introduction",
@@ -2528,7 +2845,7 @@ def parse_content_to_json_contenttype(md_text):
     def clean_line(line):
         cleaned = re.sub(r'^#+\s*', '', line)
         cleaned = re.sub(r'^[-*+]\s+', '', cleaned)
-        # cleaned = re.sub(r'^\d+\.\s+', '', cleaned)
+        #cleaned = re.sub(r'^\d+\.\s+', '', cleaned)
         cleaned = re.sub(r'\*\*|__|\*|_', '', cleaned)
         cleaned = re.sub(r'`+', '', cleaned)
         cleaned = re.sub(r':\s*$', '', cleaned)
@@ -2605,7 +2922,7 @@ def parse_content_to_json_contenttype(md_text):
                 })
         current_topic["Common Challenges and Solutions"] = challenges_solutions
         return current_topic
-        
+
     def restructure_challenges(current_topic):
         challenges_solutions = current_topic["Common Challenges and Solutions"]
         restructured = []
@@ -2628,8 +2945,15 @@ def parse_content_to_json_contenttype(md_text):
                     "solution": challenge["solution"]
                 })
         current_topic["Common Challenges and Solutions"] = restructured
-        return current_topic                                          
-    import string
+        return current_topic
+
+    import re,string
+
+    def is_tag_line(line: str) -> bool:
+        """Return True if the line starts with a tag like <div>, <img>, <figure>, <textarea>, etc."""
+        stripped = line.strip().lower()
+        return stripped.startswith("<div") or stripped.startswith("<img") \
+            or stripped.startswith("<figure") or stripped.startswith("<textarea")
 
     def fix_titles_before_comprehensive(lines):
         updated_lines = lines.copy()
@@ -2643,6 +2967,12 @@ def parse_content_to_json_contenttype(md_text):
         # Step 2: Go to the line before each and update
         for idx, comp_idx in enumerate(comp_indices):
             prev_idx = comp_idx - 1
+
+            # Walk upwards until a non-tag/text line is found
+            
+            while prev_idx >= 0 and is_tag_line(lines[prev_idx]):
+                prev_idx -= 1
+
             if prev_idx >= 0:
                 prev_line = updated_lines[prev_idx].strip()
                 letter = string.ascii_uppercase[idx]
@@ -2709,10 +3039,10 @@ def parse_content_to_json_contenttype(md_text):
             return standard_json
         except Exception as e:
             print(f"An error occurred: {str(e)}")
-            return standard_json                                         
+            return standard_json
 
     def process_topic_coverage(topic_key, lines, standard_json):
-        lines = fix_titles_before_comprehensive(lines)                       
+        lines = fix_titles_before_comprehensive(lines)
         topics = []
         current_topic = {
             "Topic Title": "",
@@ -2733,7 +3063,8 @@ def parse_content_to_json_contenttype(md_text):
         current_lines = []
         topic_title = None
         lowercase_topic_headings = [h.lower() for h in topic_headings]
-        for line in lines:
+        # for line in lines:
+        for i, line in enumerate(lines):
             line = line.strip()
             if re.match(r'^[A-Z]\.\s*+.+$', line):
                 if topic_title:
@@ -2764,6 +3095,9 @@ def parse_content_to_json_contenttype(md_text):
                         elif current_subsection == "Integration with Other Concepts":
                             joined = '\n'.join([l for l in current_lines if l])
                             current_topic["Integration with Other Concepts"] = joined.split('\n') if '\n' in joined else joined
+                        elif line.startswith("<div"):
+                            # Add new key to store the section line
+                            current_topic["Section"] = line
                     current_topic["Topic Title"] = topic_title
                     topics.append(current_topic)
                     current_topic = {
@@ -2813,8 +3147,13 @@ def parse_content_to_json_contenttype(md_text):
                     elif current_subsection == "Integration with Other Concepts":
                         joined = '\n'.join([l for l in current_lines if l])
                         current_topic["Integration with Other Concepts"] = joined.split('\n') if '\n' in joined else joined
+                    elif line.startswith("<div"):
+                        # Add new key to store the section line
+                        current_topic["Section"] = line
                 current_subsection = matching_heading
                 current_lines = []
+            elif line.startswith("<div") and i > 0 and re.match(r"^[A-Za-z]\.", lines[i - 1].strip()):
+                current_topic["Section"] = line
             elif current_subsection and line:
                 current_lines.append(line)
         if topic_title:
@@ -2845,6 +3184,9 @@ def parse_content_to_json_contenttype(md_text):
                 elif current_subsection == "Integration with Other Concepts":
                     joined = '\n'.join([l for l in current_lines if l])
                     current_topic["Integration with Other Concepts"] = joined.split('\n') if '\n' in joined else joined
+                elif line.startswith("<div"):
+                    # Add new key to store the section line
+                    current_topic["Section"] = line
             current_topic["Topic Title"] = topic_title
             topics.append(current_topic)
         standard_json["chapter"]["Detailed Topic Coverage"] = topics
@@ -2852,8 +3194,11 @@ def parse_content_to_json_contenttype(md_text):
         if topics == []:
             standard_json = process_topic_coverage_two(topic_key, lines, standard_json)
         updated_json = modify_detailed_topic_coverage(standard_json)
-        return updated_json   
+        return updated_json                                                                                      
         #return standard_json
+        
+    
+    
     def check_missing_values(standard_json, parent_key="", chapter_key="chapter"):
         """
         Recursively checks the standard_json for empty or missing values and logs them.
@@ -3007,14 +3352,23 @@ def parse_content_to_json_contenttype(md_text):
         return glossary
 
     raw_lines = [line.strip() for line in rawtext.split('\n') if line.strip()]
-    cleaned_lines = [clean_line(line) for line in raw_lines]
+    #cleaned_lines = [clean_line(line) for line in raw_lines]
+    cleaned_lines = [
+    line.strip() if "<img" in line.lower() else clean_line(line)
+    for line in raw_lines
+    ]
+
+
 
     parsed_data = {}
     current_heading = None
     lowercase_headings = [h.lower() for h in headings]
 
     for line in cleaned_lines:
-        cleaned = clean_line(line)
+        if re.search(r"<\s*img\b", line, re.IGNORECASE):
+            cleaned = line.strip()   # keep <img> line unchanged
+        else:
+            cleaned = clean_line(line)
         if cleaned.lower() in lowercase_headings:
             matching_heading = next(h for h in headings if h.lower() == cleaned.lower())
             current_heading = matching_heading
@@ -3124,12 +3478,13 @@ def rename_keys(obj, key_mapping):
 @main.route('/download_module_materials/<analysis_id>/<int:module_id>')
 def download_module_materials(analysis_id, module_id):
     """Download materials for a specific module."""
-    current_app.logger.info("Preparing download for module %s (analysis ID: %s)", module_id, analysis_id)                                                                                                     
+    current_app.logger.info("Preparing download for module %s (analysis ID: %s)", module_id, analysis_id)
+
     # Load analysis data
     analysis_data = load_analysis(analysis_id)
     
     if not analysis_data or 'course_materials' not in analysis_data:
-        current_app.logger.warning("Materials not found for analysis ID: %s", analysis_id)                                                                                  
+        current_app.logger.warning("Materials not found for analysis ID: %s", analysis_id)
         flash('Materials not found.')
         return redirect(url_for('main.index'))
     
@@ -3141,12 +3496,12 @@ def download_module_materials(analysis_id, module_id):
             break
     
     if not module:
-        current_app.logger.warning("Module %s not found in analysis ID: %s", module_id, analysis_id)                                                                                            
+        current_app.logger.warning("Module %s not found in analysis ID: %s", module_id, analysis_id)
         flash('Module not found.')
         return redirect(url_for('main.view_materials', analysis_id=analysis_id))
     
     try:
-        current_app.logger.debug("Creating ZIP for module %s", module_id)                                                                 
+        current_app.logger.debug("Creating ZIP for module %s", module_id)
         # Create a zip file with module materials
         zip_buffer = io.BytesIO()
         
@@ -3168,7 +3523,7 @@ def download_module_materials(analysis_id, module_id):
             zip_file.writestr(f"Module_{module_id}_Summary.json", json.dumps(summary, indent=2))
         
         zip_buffer.seek(0)
-        current_app.logger.info("Module ZIP created successfully for module %s", module_id)                                                                                   
+        current_app.logger.info("Module ZIP created successfully for module %s", module_id)
         
         return send_file(
             zip_buffer,
@@ -3178,7 +3533,7 @@ def download_module_materials(analysis_id, module_id):
         )
         
     except Exception as e:
-        current_app.logger.error("Error creating download file (download_module_materials): %s", str(e), exc_info=True)                                                                                                               
+        current_app.logger.error("Error creating download file (download_module_materials): %s", str(e), exc_info=True)
         logger.error(f"Error creating module materials ZIP: {str(e)}")
         flash('Error creating download file.')
         return redirect(url_for('main.view_materials', analysis_id=analysis_id))
@@ -3191,7 +3546,20 @@ def export_materials(analysis_id, format):
     flash(f'{format.upper()} export not yet implemented. Downloading as ZIP instead.')
     return redirect(url_for('main.download_all_materials', analysis_id=analysis_id))
 
-# Helper functions for Phase 3
+
+
+
+from flask import current_app, send_from_directory,  abort
+
+@main.route("/moduleimages/<analysis_id>/<filename>")
+def serve_module_image(analysis_id, filename):
+    folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "moduleimages", analysis_id)
+    folder = os.path.abspath(folder)  # ensure safe absolute path
+    if not os.path.exists(os.path.join(folder, filename)):
+        abort(404)
+    return send_from_directory(folder, filename)
+
+
 
 def calculate_materials_stats(materials):
     """Calculate statistics for materials dashboard."""
