@@ -1235,40 +1235,40 @@ def generate_materials(analysis_id):
 from models.image_service import image_service
 
 # Update the view_material route to include images
-@main.route('/view_material/<analysis_id>/<int:module_id>/<material_type>')
-def view_material(analysis_id, module_id, material_type):
-    """View a specific material component."""
-    # Load analysis data
-    analysis_data = load_analysis(analysis_id)
+# @main.route('/view_material/<analysis_id>/<int:module_id>/<material_type>')
+# def view_material(analysis_id, module_id, material_type):
+#     """View a specific material component."""
+#     # Load analysis data
+#     analysis_data = load_analysis(analysis_id)
    
-    if not analysis_data or 'course_materials' not in analysis_data:
-        flash('Materials not found.')
-        return redirect(url_for('main.index'))
+#     if not analysis_data or 'course_materials' not in analysis_data:
+#         flash('Materials not found.')
+#         return redirect(url_for('main.index'))
    
-    # Find the module
-    module = None
-    for m in analysis_data['course_materials']['modules']:
-        if m['number'] == module_id:
-            module = m
-            break
+#     # Find the module
+#     module = None
+#     for m in analysis_data['course_materials']['modules']:
+#         if m['number'] == module_id:
+#             module = m
+#             break
    
-    if not module:
-        flash('Module not found.')
-        return redirect(url_for('main.view_materials', analysis_id=analysis_id))
+#     if not module:
+#         flash('Module not found.')
+#         return redirect(url_for('main.view_materials', analysis_id=analysis_id))
    
-    # Get the specific material
-    material = module['components'].get(material_type)
+#     # Get the specific material
+#     material = module['components'].get(material_type)
    
-    if not material:
-        flash(f'{material_type.replace("_", " ").title()} not found for this module.')
-        return redirect(url_for('main.view_materials', analysis_id=analysis_id))
+#     if not material:
+#         flash(f'{material_type.replace("_", " ").title()} not found for this module.')
+#         return redirect(url_for('main.view_materials', analysis_id=analysis_id))
    
-    return render_template('view_material.html',
-                          analysis_id=analysis_id,
-                          course_topic=analysis_data['course_topic'],
-                          module_number=module_id,
-                          material_type=material_type,
-                          material=material)
+#     return render_template('view_material.html',
+#                           analysis_id=analysis_id,
+#                           course_topic=analysis_data['course_topic'],
+#                           module_number=module_id,
+#                           material_type=material_type,
+#                           material=material)
 
 # Add a new route for fetching images dynamically
 @main.route('/get_images/<analysis_id>/<int:module_id>')
